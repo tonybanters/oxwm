@@ -1,7 +1,7 @@
 include config.mk
 
 build:
-    $(CARGO) build $(PROFILE)
+    $(CARGO) build --$(PROFILE)
 
 install: build
     cp -f target/$(PROFILE)/oxwm $(PREFIX)/bin/oxwm
