@@ -8,6 +8,9 @@ use crate::layout::GapConfig;
 use crate::layout::Layout;
 use crate::layout::tiling::TilingLayout;
 use anyhow::Result;
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
 
 use x11rb::connection::Connection;
 use x11rb::protocol::Event;
@@ -255,6 +258,104 @@ impl WindowManager {
         Ok(())
     }
 
+    fn get_config_file() -> Option<PathBuf> {
+        if let Ok(home) = std::env::var("HOME") {
+            let config_file = PathBuf::from(home).join(".config/oxwm/config.rs");
+            if config_file.exists() {
+                return Some(config_file);
+            }
+        }
+        None
+    }
+
+    fn get_build_dir() -> PathBuf {
+        let home = std::env::var("HOME").expect("HOME not set");
+        PathBuf::from(home).join(".local/share/oxwm")
+    }
+
+    fn ensure_build_setup() -> Result<PathBuf> {
+        let build_dir = Self::get_build_dir();
+        let config_file = Self::get_config_file()
+            .ok_or_else(|| anyhow::anyhow!("Config file not found at ~/.config/oxwm/config.rs"))?;
+
+        fs::create_dir_all(&build_dir)?;
+        fs::create_dir_all(build_dir.join("src"))?;
+
+        let oxwm_lib_path = env!("CARGO_MANIFEST_DIR");
+
+        let cargo_toml = format!(
+            r#"[package]
+name = "oxwm-config"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+oxwm = {{ path = "{}" }}
+x11 = {{ version = "2.21", features = ["xlib", "xft"] }}
+x11rb = "0.13"
+anyhow = "1"
+chrono = "0.4"
+"#,
+            oxwm_lib_path
+        );
+        fs::write(build_dir.join("Cargo.toml"), cargo_toml)?;
+
+        let config_path = config_file.display();
+        let main_rs = format!(
+            r#"// Auto-generated - do not edit
+#[path = "{}"]
+mod config;
+
+fn main() -> anyhow::Result<()> {{
+    oxwm::run()
+}}
+"#,
+            config_path
+        );
+
+        fs::write(build_dir.join("src/main.rs"), main_rs)?;
+
+        Ok(build_dir)
+    }
+
+    fn rebuild_config() -> Result<PathBuf> {
+        println!("Rebuilding config...");
+
+        let build_dir = Self::ensure_build_setup()?;
+
+        let status = Command::new("cargo")
+            .args(["build", "--release"])
+            .current_dir(&build_dir)
+            .status()?;
+
+        if !status.success() {
+            anyhow::bail!("Config build failed! Check your ~/.config/oxwm/config.rs");
+        }
+
+        let binary = build_dir.join("target/release/oxwm-config");
+        println!("Config rebuilt: {}", binary.display());
+
+        Ok(binary)
+    }
+    // fn rebuild_config() -> Result<()> {
+    //     let config_dir = Self::get_config_dir()
+    //         .ok_or_else(|| anyhow::anyhow!("Config directory not found at ~/.config/oxwm"))?;
+    //
+    //     println!("Rebuilding config from {:?}", config_dir);
+    //
+    //     let status = Command::new("cargo")
+    //         .args(["build", "--release"])
+    //         .current_dir(&config_dir)
+    //         .status()?;
+    //
+    //     if !status.success() {
+    //         anyhow::bail!("Config build failed. Check your ~/.config/oxwm/src/config.rs");
+    //     }
+    //
+    //     println!("Config rebuilt successfully");
+    //     Ok(())
+    // }
+
     pub fn run(&mut self) -> Result<bool> {
         println!("oxwm started on display {}", self.screen_number);
 
@@ -320,8 +421,14 @@ impl WindowManager {
                     self.cycle_focus(*direction)?;
                 }
             }
-            KeyAction::Quit | KeyAction::Restart => {
+            KeyAction::Quit => {
                 //no-op
+            }
+            KeyAction::Restart => {
+                if let Err(e) = Self::rebuild_config() {
+                    eprintln!("Rebuild failed: {}", e);
+                    eprintln!("Restarting with current binary anyway...");
+                }
             }
             KeyAction::ViewTag => {
                 if let Arg::Int(tag_index) = arg {
@@ -400,7 +507,7 @@ impl WindowManager {
 
         let desktop = self.selected_tags.trailing_zeros();
 
-        let bytes = (desktop as u32).to_ne_bytes();
+        let bytes = (desktop).to_ne_bytes();
         self.connection.change_property(
             PropMode::REPLACE,
             self.root,
