@@ -166,6 +166,13 @@ nix develop
 cargo build
 #+end_src
 
+* Installation with Make
+You can edit =config.mk= to customize your installation options before installing, and then, run:
+
+#+begin_src sh
+sudo make install
+#+end_src
+
 * Testing Xephyr with Justfile
 The =justfile= includes a =test= recipe that starts Xephyr on =:1=, launches
 test clients (xterm, xclock), and runs oxwm in the foreground.

@@ -32,20 +32,20 @@ pub const MODKEY: KeyButMask = KeyButMask::MOD4;
 // ========================================
 
 // Base colors
-const GRAY_DARK: u32 = 0x222222;
-const GRAY_MID: u32 = 0x444444;
-const GRAY_LIGHT: u32 = 0xbbbbbb;
-const CYAN: u32 = 0x0db9d7;
-const MAGENTA: u32 = 0xad8ee6;
-const RED: u32 = 0xf7768e;
-const GREEN: u32 = 0x9ece6a;
-const BLUE: u32 = 0x7aa2f7;
-const YELLOW: u32 = 0xe0af68;
+const GRAY_DARK: &str = "#222222";
+const GRAY_MID: &str = "#444444";
+const GRAY_LIGHT: &str = "#bbbbbb";
+const CYAN: &str = "#0db9d7";
+const MAGENTA: &str = "#ad8ee6";
+const RED: &str = "#f7768e";
+const GREEN: &str = "#9ece6a";
+const BLUE: &str = "#7aa2f7";
+const YELLOW: &str = "#e0af68";
 
 pub struct ColorScheme {
-    pub foreground: u32,
-    pub background: u32,
-    pub underline: u32,
+    pub foreground: &'static str,
+    pub background: &'static str,
+    pub underline: &'static str,
 }
 
 pub const SCHEME_NORMAL: ColorScheme = ColorScheme {
