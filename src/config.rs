@@ -6,24 +6,24 @@ use x11rb::protocol::xproto::KeyButMask;
 // ========================================
 // APPEARANCE
 // ========================================
-pub const BORDER_WIDTH: u32 = 2;
+pub const BORDER_WIDTH: u32 = 0;
 pub const BORDER_FOCUSED: u32 = 0x6dade3;
 pub const BORDER_UNFOCUSED: u32 = 0xbbbbbb;
-pub const FONT: &str = "JetBrainsMono Nerd Font:style=Bold:size=10";
+pub const FONT: &str = "JetBrainsMono Nerd Font:style=Bold:size=14";
 
 // ========================================
 // GAPS (Vanity Gaps)
 // ========================================
 pub const GAPS_ENABLED: bool = true;
-pub const GAP_INNER_HORIZONTAL: u32 = 6;
-pub const GAP_INNER_VERTICAL: u32 = 6;
-pub const GAP_OUTER_HORIZONTAL: u32 = 6;
-pub const GAP_OUTER_VERTICAL: u32 = 6;
-
+pub const GAP_INNER_HORIZONTAL: u32 = 3;
+pub const GAP_INNER_VERTICAL: u32 = 3;
+pub const GAP_OUTER_HORIZONTAL: u32 = 3;
+pub const GAP_OUTER_VERTICAL: u32 = 3;
+//
 // ========================================
 // DEFAULTS
 // ========================================
-pub const TERMINAL: &str = "st";
+pub const TERMINAL: &str = "alacritty";
 pub const XCLOCK: &str = "xclock";
 pub const MODKEY: KeyButMask = KeyButMask::MOD4;
 
@@ -32,20 +32,20 @@ pub const MODKEY: KeyButMask = KeyButMask::MOD4;
 // ========================================
 
 // Base colors
-const GRAY_DARK: u32 = 0x222222;
-const GRAY_MID: u32 = 0x444444;
-const GRAY_LIGHT: u32 = 0xbbbbbb;
-const CYAN: u32 = 0x0db9d7;
-const MAGENTA: u32 = 0xad8ee6;
-const RED: u32 = 0xf7768e;
-const GREEN: u32 = 0x9ece6a;
-const BLUE: u32 = 0x7aa2f7;
-const YELLOW: u32 = 0xe0af68;
+const GRAY_DARK: &str = "#222222";
+const GRAY_MID: &str = "#444444";
+const GRAY_LIGHT: &str = "#bbbbbb";
+const CYAN: &str = "#0db9d7";
+const MAGENTA: &str = "#ad8ee6";
+const RED: &str = "#f7768e";
+const GREEN: &str = "#9ece6a";
+const BLUE: &str = "#7aa2f7";
+const YELLOW: &str = "#e0af68";
 
 pub struct ColorScheme {
-    pub foreground: u32,
-    pub background: u32,
-    pub underline: u32,
+    pub foreground: &'static str,
+    pub background: &'static str,
+    pub underline: &'static str,
 }
 
 pub const SCHEME_NORMAL: ColorScheme = ColorScheme {
@@ -129,28 +129,14 @@ pub const KEYBINDINGS: &[Key] = &[
 // STATUS BAR BLOCKS
 // ========================================
 pub const STATUS_BLOCKS: &[BlockConfig] = &[
-    // BlockConfig {
-    //     format: "",
-    //     command: BlockCommand::Battery {
-    //         format_charging: "󰂄 Bat: {}%",
-    //         format_discharging: "󰁹 Bat:{}%",
-    //         format_full: "󰁹 Bat: {}%",
-    //     },
-    //     interval_secs: 30,
-    //     color: BLUE,
-    //     underline: true,
-    // },
-    // BlockConfig {
-    //     format: " |  ",
-    //     command: BlockCommand::Static(""),
-    //     interval_secs: u64::MAX,
-    //     color: GRAY_LIGHT,
-    //     underline: false,
-    // },
     BlockConfig {
-        format: "󰍛 {used}/{total} GB",
-        command: BlockCommand::Ram,
-        interval_secs: 5,
+        format: "",
+        command: BlockCommand::Battery {
+            format_charging: "󰂄 Bat: {}%",
+            format_discharging: "󰁹 Bat:{}%",
+            format_full: "󰁹 Bat: {}%",
+        },
+        interval_secs: 30,
         color: BLUE,
         underline: true,
     },

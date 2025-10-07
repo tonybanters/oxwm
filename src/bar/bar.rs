@@ -8,6 +8,11 @@ use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 use x11rb::rust_connection::RustConnection;
 
+// this allows the user to use #HEX instead of 0xHEX
+fn parse_color(color: &str) -> u32 {
+    u32::from_str_radix(&color[1..], 16).unwrap()
+}
+
 pub struct Bar {
     window: Window,
     width: u16,
@@ -40,7 +45,7 @@ impl Bar {
         }
         let font = Font::new(display, screen_num as i32, FONT)?;
 
-        let height = (font.height() as f32 * 1.4) as u16;
+        let height = (font.height() as f32 * 1.5) as u16;
 
         connection.create_window(
             COPY_DEPTH_FROM_PARENT,
@@ -54,7 +59,7 @@ impl Bar {
             WindowClass::INPUT_OUTPUT,
             screen.root_visual,
             &CreateWindowAux::new()
-                .background_pixel(SCHEME_NORMAL.background)
+                .background_pixel(parse_color(SCHEME_NORMAL.background))
                 .event_mask(EventMask::EXPOSURE | EventMask::BUTTON_PRESS)
                 .override_redirect(1),
         )?;
@@ -63,8 +68,8 @@ impl Bar {
             graphics_context,
             window,
             &CreateGCAux::new()
-                .foreground(SCHEME_NORMAL.foreground)
-                .background(SCHEME_NORMAL.background),
+                .foreground(parse_color(SCHEME_NORMAL.foreground))
+                .background(parse_color(SCHEME_NORMAL.background)),
         )?;
 
         connection.map_window(window)?;
@@ -167,7 +172,7 @@ impl Bar {
 
         connection.change_gc(
             self.graphics_context,
-            &ChangeGCAux::new().foreground(SCHEME_NORMAL.background),
+            &ChangeGCAux::new().foreground(parse_color(SCHEME_NORMAL.background)),
         )?;
         connection.poly_fill_rectangle(
             self.window,
@@ -218,7 +223,7 @@ impl Bar {
 
                 connection.change_gc(
                     self.graphics_context,
-                    &ChangeGCAux::new().foreground(scheme.underline),
+                    &ChangeGCAux::new().foreground(parse_color(scheme.underline)),
                 )?;
                 connection.poly_fill_rectangle(
                     self.window,
@@ -248,7 +253,7 @@ impl Bar {
                     let text_y = top_padding + self.font.ascent();
 
                     self.font_draw
-                        .draw_text(&self.font, block.color(), x_position, text_y, &text);
+                        .draw_text(&self.font, parse_color(block.color()), x_position, text_y, &text);
 
                     if self.block_underlines[i] {
                         let font_height = self.font.height();
@@ -262,7 +267,7 @@ impl Bar {
 
                         connection.change_gc(
                             self.graphics_context,
-                            &ChangeGCAux::new().foreground(block.color()),
+                            &ChangeGCAux::new().foreground(parse_color(block.color())),
                         )?;
 
                         connection.poly_fill_rectangle(
@@ -297,7 +302,7 @@ impl Bar {
             }
             current_x_position += tag_width as i16;
         }
-        return None;
+        None
     }
 
     pub fn needs_redraw(&self) -> bool {
