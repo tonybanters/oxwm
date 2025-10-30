@@ -14,7 +14,7 @@
 #DEFINE $color_fg = 0xbbbbbb
 #DEFINE $color_light_blue = 0x7aa2f7
 #DEFINE $modkey = Mod4
-#DEFINE $secondarymodkey = Mod1
+#DEFINE $secondary_modkey = Mod1
 
 (
     border_width: 2,
@@ -47,7 +47,7 @@
         (modifiers: [$modkey, Shift], key: Space, action: ToggleFloating),
         (modifiers: [$modkey], key: F, action: ChangeLayout, arg: "normie"),
         (modifiers: [$modkey], key: C, action: ChangeLayout, arg: "tiling"),
-        (modifiers: [$secondarymodkey], key: N, action: CycleLayout),
+        (modifiers: [$secondary_modkey], key: N, action: CycleLayout),
         (modifiers: [$modkey], key: A, action: ToggleGaps),
         (modifiers: [$modkey, Shift], key: Q, action: Quit),
         (modifiers: [$modkey, Shift], key: R, action: Restart),
