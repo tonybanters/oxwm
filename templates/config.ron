@@ -13,6 +13,8 @@
 #DEFINE $color_bg = 0x1a1b26
 #DEFINE $color_fg = 0xbbbbbb
 #DEFINE $color_light_blue = 0x7aa2f7
+#DEFINE $modkey = Mod4
+#DEFINE $secondarymodkey = Mod1
 
 (
     border_width: 2,
@@ -27,7 +29,6 @@
     gap_outer_vertical: 5,
 
     terminal: $terminal,
-    modkey: Mod4,
 
     tags: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
     layout_symbols: [
@@ -36,52 +37,52 @@
     ],
 
     keybindings: [
-        (modifiers: [Mod4], key: Return, action: Spawn, arg: $terminal),
-        (modifiers: [Mod4], key: D, action: Spawn, arg: ["sh", "-c", "dmenu_run -l 10"]),
-        (modifiers: [Mod4], key: S, action: Spawn, arg: ["sh", "-c", "maim -s | xclip -selection clipboard -t image/png"]),
-        (modifiers: [Mod4], key: Q, action: KillClient),
-        (modifiers: [Mod4, Shift], key: F, action: ToggleFullScreen),
-        (modifiers: [Mod4, Shift], key: Space, action: ToggleFloating),
-        (modifiers: [Mod4], key: F, action: ChangeLayout, arg: "normie"),
-        (modifiers: [Mod4], key: C, action: ChangeLayout, arg: "tiling"),
-        (modifiers: [Mod1], key: N, action: CycleLayout),
-        (modifiers: [Mod4], key: A, action: ToggleGaps),
-        (modifiers: [Mod4, Shift], key: Q, action: Quit),
-        (modifiers: [Mod4, Shift], key: R, action: Restart),
-        (modifiers: [Mod4], key: J, action: FocusStack, arg: -1),
-        (modifiers: [Mod4], key: K, action: FocusStack, arg: 1),
-        (modifiers: [Mod4], key: Comma, action: FocusMonitor, arg: -1),
-        (modifiers: [Mod4], key: Period, action: FocusMonitor, arg: 1),
-        (modifiers: [Mod4], key: Key1, action: ViewTag, arg: 0),
-        (modifiers: [Mod4], key: Key2, action: ViewTag, arg: 1),
-        (modifiers: [Mod4], key: Key3, action: ViewTag, arg: 2),
-        (modifiers: [Mod4], key: Key4, action: ViewTag, arg: 3),
-        (modifiers: [Mod4], key: Key5, action: ViewTag, arg: 4),
-        (modifiers: [Mod4], key: Key6, action: ViewTag, arg: 5),
-        (modifiers: [Mod4], key: Key7, action: ViewTag, arg: 6),
-        (modifiers: [Mod4], key: Key8, action: ViewTag, arg: 7),
-        (modifiers: [Mod4], key: Key9, action: ViewTag, arg: 8),
-        (modifiers: [Mod4, Shift], key: Key1, action: MoveToTag, arg: 0),
-        (modifiers: [Mod4, Shift], key: Key2, action: MoveToTag, arg: 1),
-        (modifiers: [Mod4, Shift], key: Key3, action: MoveToTag, arg: 2),
-        (modifiers: [Mod4, Shift], key: Key4, action: MoveToTag, arg: 3),
-        (modifiers: [Mod4, Shift], key: Key5, action: MoveToTag, arg: 4),
-        (modifiers: [Mod4, Shift], key: Key6, action: MoveToTag, arg: 5),
-        (modifiers: [Mod4, Shift], key: Key7, action: MoveToTag, arg: 6),
-        (modifiers: [Mod4, Shift], key: Key8, action: MoveToTag, arg: 7),
-        (modifiers: [Mod4, Shift], key: Key9, action: MoveToTag, arg: 8),
+        (modifiers: [$modkey], key: Return, action: Spawn, arg: $terminal),
+        (modifiers: [$modkey], key: D, action: Spawn, arg: ["sh", "-c", "dmenu_run -l 10"]),
+        (modifiers: [$modkey], key: S, action: Spawn, arg: ["sh", "-c", "maim -s | xclip -selection clipboard -t image/png"]),
+        (modifiers: [$modkey], key: Q, action: KillClient),
+        (modifiers: [$modkey, Shift], key: F, action: ToggleFullScreen),
+        (modifiers: [$modkey, Shift], key: Space, action: ToggleFloating),
+        (modifiers: [$modkey], key: F, action: ChangeLayout, arg: "normie"),
+        (modifiers: [$modkey], key: C, action: ChangeLayout, arg: "tiling"),
+        (modifiers: [$secondarymodkey], key: N, action: CycleLayout),
+        (modifiers: [$modkey], key: A, action: ToggleGaps),
+        (modifiers: [$modkey, Shift], key: Q, action: Quit),
+        (modifiers: [$modkey, Shift], key: R, action: Restart),
+        (modifiers: [$modkey], key: J, action: FocusStack, arg: -1),
+        (modifiers: [$modkey], key: K, action: FocusStack, arg: 1),
+        (modifiers: [$modkey], key: Comma, action: FocusMonitor, arg: -1),
+        (modifiers: [$modkey], key: Period, action: FocusMonitor, arg: 1),
+        (modifiers: [$modkey], key: Key1, action: ViewTag, arg: 0),
+        (modifiers: [$modkey], key: Key2, action: ViewTag, arg: 1),
+        (modifiers: [$modkey], key: Key3, action: ViewTag, arg: 2),
+        (modifiers: [$modkey], key: Key4, action: ViewTag, arg: 3),
+        (modifiers: [$modkey], key: Key5, action: ViewTag, arg: 4),
+        (modifiers: [$modkey], key: Key6, action: ViewTag, arg: 5),
+        (modifiers: [$modkey], key: Key7, action: ViewTag, arg: 6),
+        (modifiers: [$modkey], key: Key8, action: ViewTag, arg: 7),
+        (modifiers: [$modkey], key: Key9, action: ViewTag, arg: 8),
+        (modifiers: [$modkey, Shift], key: Key1, action: MoveToTag, arg: 0),
+        (modifiers: [$modkey, Shift], key: Key2, action: MoveToTag, arg: 1),
+        (modifiers: [$modkey, Shift], key: Key3, action: MoveToTag, arg: 2),
+        (modifiers: [$modkey, Shift], key: Key4, action: MoveToTag, arg: 3),
+        (modifiers: [$modkey, Shift], key: Key5, action: MoveToTag, arg: 4),
+        (modifiers: [$modkey, Shift], key: Key6, action: MoveToTag, arg: 5),
+        (modifiers: [$modkey, Shift], key: Key7, action: MoveToTag, arg: 6),
+        (modifiers: [$modkey, Shift], key: Key8, action: MoveToTag, arg: 7),
+        (modifiers: [$modkey, Shift], key: Key9, action: MoveToTag, arg: 8),
 
         // Moving Windows
-        (modifiers: [Mod4, Control], key: K, action: SmartMoveWin, arg: 0), // UP
-        (modifiers: [Mod4, Control], key: J, action: SmartMoveWin, arg: 1), // DOWN
-        (modifiers: [Mod4, Control], key: H, action: SmartMoveWin, arg: 2), // LEFT
-        (modifiers: [Mod4, Control], key: L, action: SmartMoveWin, arg: 3), // RIGHT
+        (modifiers: [$modkey, Control], key: K, action: SmartMoveWin, arg: 0), // UP
+        (modifiers: [$modkey, Control], key: J, action: SmartMoveWin, arg: 1), // DOWN
+        (modifiers: [$modkey, Control], key: H, action: SmartMoveWin, arg: 2), // LEFT
+        (modifiers: [$modkey, Control], key: L, action: SmartMoveWin, arg: 3), // RIGHT
 
         // Exchanging Clients
-        (modifiers: [Mod4, Shift], key: K, action: ExchangeClient, arg: 0), // UP
-        (modifiers: [Mod4, Shift], key: J, action: ExchangeClient, arg: 1), // DOWN
-        (modifiers: [Mod4, Shift], key: H, action: ExchangeClient, arg: 2), // LEFT
-        (modifiers: [Mod4, Shift], key: L, action: ExchangeClient, arg: 3), // RIGHT
+        (modifiers: [$modkey, Shift], key: K, action: ExchangeClient, arg: 0), // UP
+        (modifiers: [$modkey, Shift], key: J, action: ExchangeClient, arg: 1), // DOWN
+        (modifiers: [$modkey, Shift], key: H, action: ExchangeClient, arg: 2), // LEFT
+        (modifiers: [$modkey, Shift], key: L, action: ExchangeClient, arg: 3), // RIGHT
     ],
     
     status_blocks: [
