@@ -84,3 +84,10 @@ pub const BACKSLASH: u8 = 51;
 pub const COMMA: u8 = 59;
 pub const PERIOD: u8 = 60;
 pub const SLASH: u8 = 61;
+
+// Sound
+pub const XF86_AUDIO_RAISE_VOLUME: u8 = 123;
+pub const XF86_AUDIO_LOWER_VOLUME: u8 = 122;
+pub const XF86_AUDIO_MUTE: u8 = 121;
+pub const XF86_MON_BRIGHTNESS_UP: u8 = 232;
+pub const XF86_MON_BRIGHTNESS_DOWN: u8 = 233;
