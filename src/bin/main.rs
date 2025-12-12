@@ -4,7 +4,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<String> = std::env::args().collect();
 
     let mut custom_config_path: Option<PathBuf> = None;
-
+    
+	unsafe {
+	       libc::signal(libc::SIGCHLD, libc::SIG_IGN);
+	}
+	
     match arguments.get(1).map(|string| string.as_str()) {
         Some("--version") => {
             println!("oxwm {}", env!("CARGO_PKG_VERSION"));
