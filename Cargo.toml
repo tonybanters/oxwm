@@ -18,3 +18,4 @@ chrono = "0.4"
 dirs = "5.0"
 serde = { version = "1.0", features = ["derive"] }
 mlua = { version = "0.10", features = ["lua54", "vendored"] }
+libc = "0.2"

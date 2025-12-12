@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    oxwm::signal::prevent_zombie_processes();
+
     let arguments: Vec<String> = std::env::args().collect();
 
     let mut custom_config_path: Option<PathBuf> = None;

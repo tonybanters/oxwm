@@ -6,6 +6,7 @@ pub mod keyboard;
 pub mod layout;
 pub mod monitor;
 pub mod overlay;
+pub mod signal;
 pub mod size_hints;
 pub mod tab_bar;
 pub mod window_manager;
