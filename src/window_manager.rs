@@ -740,6 +740,13 @@ impl WindowManager {
                 }
             }
             KeyAction::ToggleFullScreen => {
+                // Disable gaps and save previous state in config if not already in fullscreen
+                if self.fullscreen_windows.is_empty() {
+                    self.config.gaps_enabled = std::mem::take(&mut self.gaps_enabled);
+                } else {
+                    self.gaps_enabled = self.config.gaps_enabled;
+                }
+
                 self.fullscreen()?;
                 self.restack()?;
             }
@@ -1413,6 +1420,14 @@ impl WindowManager {
                 .copied()
                 .collect();
 
+            let focused = self
+                .monitors
+                .get(self.selected_monitor)
+                .and_then(|m| m.selected_client)
+                .unwrap();
+
+            self.fullscreen_windows.insert(focused);
+
             for window in &windows {
                 if let Ok(geom) = self.connection.get_geometry(*window)?.reply() {
                     self.floating_geometry_before_fullscreen.insert(
@@ -1481,6 +1496,14 @@ impl WindowManager {
             }
             self.connection.flush()?;
         } else {
+            let focused = self
+                .monitors
+                .get(self.selected_monitor)
+                .and_then(|m| m.selected_client)
+                .unwrap();
+
+            self.fullscreen_windows.remove(&focused);
+
             if let Some(last) = self.last_layout {
                 if let Ok(layout) = layout_from_str(last) {
                     self.layout = layout;
