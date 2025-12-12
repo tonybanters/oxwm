@@ -1439,7 +1439,26 @@ impl WindowManager {
             self.apply_layout()?;
             self.gaps_enabled = gaps_were_enabled;
 
-            let border_width = self.config.border_width;
+            // Remove borders from all visible windows for true fullscreen
+            for window in &windows {
+                let monitor_idx = self
+                    .clients
+                    .get(window)
+                    .map(|c| c.monitor_index)
+                    .unwrap_or(self.selected_monitor);
+                let monitor = &self.monitors[monitor_idx];
+
+                self.connection.configure_window(
+                    *window,
+                    &x11rb::protocol::xproto::ConfigureWindowAux::new()
+                        .x(monitor.screen_x)
+                        .y(monitor.screen_y)
+                        .width(monitor.screen_width as u32)
+                        .height(monitor.screen_height as u32)
+                        .border_width(0),
+                )?;
+            }
+
             let floating_windows: Vec<Window> = windows
                 .iter()
                 .filter(|&&w| self.floating_windows.contains(&w))
@@ -1454,27 +1473,19 @@ impl WindowManager {
                     .unwrap_or(self.selected_monitor);
                 let monitor = &self.monitors[monitor_idx];
 
-                // Fullscreen floating windows should have no gaps
-                let (outer_gap_h, outer_gap_v) = (0, 0);
-
-                let window_x = monitor.screen_x + outer_gap_h as i32;
-                let window_y = monitor.screen_y + outer_gap_v as i32;
-                let window_width = monitor
-                    .screen_width
-                    .saturating_sub(2 * outer_gap_h as i32)
-                    .saturating_sub(2 * border_width as i32);
-                let window_height = monitor
-                    .screen_height
-                    .saturating_sub(2 * outer_gap_v as i32)
-                    .saturating_sub(2 * border_width as i32);
+                let window_x = monitor.screen_x;
+                let window_y = monitor.screen_y;
+                let window_width = monitor.screen_width as u32;
+                let window_height = monitor.screen_height as u32;
 
                 self.connection.configure_window(
                     window,
                     &x11rb::protocol::xproto::ConfigureWindowAux::new()
                         .x(window_x)
                         .y(window_y)
-                        .width(window_width as u32)
-                        .height(window_height as u32),
+                        .width(window_width)
+                        .height(window_height)
+                        .border_width(0),
                 )?;
             }
             self.connection.flush()?;
