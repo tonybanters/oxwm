@@ -1420,11 +1420,14 @@ impl WindowManager {
                 .copied()
                 .collect();
 
-            let focused = self
+            let focused = match self
                 .monitors
                 .get(self.selected_monitor)
                 .and_then(|m| m.selected_client)
-                .unwrap();
+            {
+                Some(window) => window,
+                None => return Ok(()),
+            };
 
             self.fullscreen_windows.insert(focused);
 
@@ -1496,11 +1499,14 @@ impl WindowManager {
             }
             self.connection.flush()?;
         } else {
-            let focused = self
+            let focused = match self
                 .monitors
                 .get(self.selected_monitor)
                 .and_then(|m| m.selected_client)
-                .unwrap();
+            {
+                Some(window) => window,
+                None => return Ok(()),
+            };
 
             self.fullscreen_windows.remove(&focused);
 
