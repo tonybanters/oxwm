@@ -159,6 +159,7 @@ pub fn keysym_from_str(s: &str) -> Option<Keysym> {
         "Comma" => Some(XK_COMMA),
         "Period" => Some(XK_PERIOD),
         "Slash" => Some(XK_SLASH),
+        "Print" => Some(XK_PRINT),
         "AudioRaiseVolume" => Some(XF86_AUDIO_RAISE_VOLUME),
         "AudioLowerVolume" => Some(XF86_AUDIO_LOWER_VOLUME),
         "AudioMute" => Some(XF86_AUDIO_MUTE),
