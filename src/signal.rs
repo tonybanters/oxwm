@@ -1,16 +1,14 @@
 use std::process::{Command, Stdio};
 
 pub fn spawn_detached(cmd: &str) {
-    if let Ok(mut child) = Command::new("sh")
+    // Double fork method - properly detach from parent
+    let _ = Command::new("sh")
         .arg("-c")
-        .arg(format!("({}) &", cmd))
+        .arg(format!("nohup {} >/dev/null 2>&1 &", cmd))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .spawn()
-    {
-        let _ = child.wait();
-    }
+        .spawn();
 }
 
 pub fn spawn_detached_with_args(program: &str, args: &[&str]) {
