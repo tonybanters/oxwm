@@ -1413,23 +1413,22 @@ impl WindowManager {
 
     fn fullscreen(&mut self) -> WmResult<()> {
         if self.show_bar {
+            let Some(focused_window) = self
+                .monitors
+                .get(self.selected_monitor)
+                .and_then(|m| m.selected_client)
+            else {
+                return Ok(());
+            };
+
+            self.fullscreen_windows.insert(focused_window);
+
             let windows: Vec<Window> = self
                 .windows
                 .iter()
                 .filter(|&&w| self.is_window_visible(w))
                 .copied()
                 .collect();
-
-            let focused = match self
-                .monitors
-                .get(self.selected_monitor)
-                .and_then(|m| m.selected_client)
-            {
-                Some(window) => window,
-                None => return Ok(()),
-            };
-
-            self.fullscreen_windows.insert(focused);
 
             for window in &windows {
                 if let Ok(geom) = self.connection.get_geometry(*window)?.reply() {
@@ -1499,16 +1498,15 @@ impl WindowManager {
             }
             self.connection.flush()?;
         } else {
-            let focused = match self
+            let Some(focused_window) = self
                 .monitors
                 .get(self.selected_monitor)
                 .and_then(|m| m.selected_client)
-            {
-                Some(window) => window,
-                None => return Ok(()),
+            else {
+                return Ok(());
             };
 
-            self.fullscreen_windows.remove(&focused);
+            self.fullscreen_windows.remove(&focused_window);
 
             if let Some(last) = self.last_layout {
                 if let Ok(layout) = layout_from_str(last) {
