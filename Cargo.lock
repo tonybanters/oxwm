@@ -295,7 +295,6 @@ version = "0.8.1"
 dependencies = [
  "chrono",
  "dirs",
- "libc",
  "mlua",
  "serde",
  "x11",

@@ -1,5 +1,4 @@
-use std::io::{ErrorKind, Result};
-use std::process::Command;
+use std::io::Result;
 
 use serde::Deserialize;
 use x11rb::connection::Connection;
@@ -17,7 +16,6 @@ pub enum KeyAction {
     MoveStack,
     Quit,
     Restart,
-    Recompile,
     ViewTag,
     ToggleView,
     MoveToTag,
@@ -315,16 +313,9 @@ fn handle_next_key(
 pub fn handle_spawn_action(action: KeyAction, arg: &Arg, selected_monitor: usize) -> Result<()> {
     if let KeyAction::Spawn = action {
         match arg {
-            Arg::Str(command) => match Command::new(command.as_str()).spawn() {
-                Err(error) if error.kind() == ErrorKind::NotFound => {
-                    eprintln!(
-                        "KeyAction::Spawn failed: could not spawn \"{}\", command not found",
-                        command
-                    );
-                }
-                Err(error) => Err(error)?,
-                _ => (),
-            },
+            Arg::Str(command) => {
+                crate::signal::spawn_detached(command);
+            }
             Arg::Array(command) => {
                 let Some((cmd, args)) = command.split_first() else {
                     return Ok(());
@@ -341,16 +332,7 @@ pub fn handle_spawn_action(action: KeyAction, arg: &Arg, selected_monitor: usize
                 }
 
                 let args_str: Vec<&str> = args_vec.iter().map(|s| s.as_str()).collect();
-                match Command::new(cmd.as_str()).args(&args_str).spawn() {
-                    Err(error) if error.kind() == ErrorKind::NotFound => {
-                        eprintln!(
-                            "KeyAction::Spawn failed: could not spawn \"{}\", command not found",
-                            cmd
-                        );
-                    }
-                    Err(error) => Err(error)?,
-                    _ => (),
-                }
+                crate::signal::spawn_detached_with_args(cmd, &args_str);
             }
             _ => {}
         }

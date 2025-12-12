@@ -647,10 +647,6 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
         create_action_table(lua, "Restart", Value::Nil)
     })?;
 
-    let recompile = lua.create_function(|lua, ()| {
-        create_action_table(lua, "Recompile", Value::Nil)
-    })?;
-
     let toggle_gaps = lua.create_function(|lua, ()| {
         create_action_table(lua, "ToggleGaps", Value::Nil)
     })?;
@@ -693,7 +689,6 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
     parent.set("autostart", autostart)?;
     parent.set("quit", quit)?;
     parent.set("restart", restart)?;
-    parent.set("recompile", recompile)?;
     parent.set("toggle_gaps", toggle_gaps)?;
     parent.set("set_master_factor", set_master_factor)?;
     parent.set("inc_num_master", inc_num_master)?;
@@ -781,7 +776,6 @@ fn string_to_action(s: &str) -> mlua::Result<KeyAction> {
         "MoveStack" => Ok(KeyAction::MoveStack),
         "Quit" => Ok(KeyAction::Quit),
         "Restart" => Ok(KeyAction::Restart),
-        "Recompile" => Ok(KeyAction::Recompile),
         "ViewTag" => Ok(KeyAction::ViewTag),
         "ToggleView" => Ok(KeyAction::ToggleView),
         "MoveToTag" => Ok(KeyAction::MoveToTag),

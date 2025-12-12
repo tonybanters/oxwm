@@ -9,7 +9,6 @@ use crate::layout::{Layout, LayoutBox, LayoutType, layout_from_str, next_layout}
 use crate::monitor::{Monitor, detect_monitors};
 use crate::overlay::{ErrorOverlay, KeybindOverlay, Overlay};
 use std::collections::{HashMap, HashSet};
-use std::process::Command;
 use x11rb::cursor::Handle as CursorHandle;
 
 use x11rb::connection::Connection;
@@ -299,7 +298,7 @@ impl WindowManager {
 
         window_manager.scan_existing_windows()?;
         window_manager.update_bar()?;
-        window_manager.run_autostart_commands()?;
+        window_manager.run_autostart_commands();
 
         Ok(window_manager)
     }
@@ -718,11 +717,7 @@ impl WindowManager {
         match action {
             KeyAction::Spawn => handlers::handle_spawn_action(action, arg, self.selected_monitor)?,
             KeyAction::SpawnTerminal => {
-                use std::process::Command;
-                let terminal = &self.config.terminal;
-                if let Err(error) = Command::new(terminal).spawn() {
-                    eprintln!("Failed to spawn terminal {}: {:?}", terminal, error);
-                }
+                crate::signal::spawn_detached(&self.config.terminal);
             }
             KeyAction::KillClient => {
                 if let Some(focused) = self
@@ -786,15 +781,6 @@ impl WindowManager {
             }
             KeyAction::Quit | KeyAction::Restart => {
                 // Handled in handle_event
-            }
-            KeyAction::Recompile => {
-                match std::process::Command::new("oxwm")
-                    .arg("--recompile")
-                    .spawn()
-                {
-                    Ok(_) => eprintln!("Recompiling in background"),
-                    Err(e) => eprintln!("Failed to spawn recompile: {}", e),
-                }
             }
             KeyAction::ViewTag => {
                 if let Arg::Int(tag_index) = arg {
@@ -3808,15 +3794,10 @@ impl WindowManager {
         Ok(())
     }
 
-    fn run_autostart_commands(&self) -> Result<(), WmError> {
+    fn run_autostart_commands(&self) {
         for command in &self.config.autostart {
-            Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .spawn()
-                .map_err(|e| WmError::Autostart(command.clone(), e))?;
+            crate::signal::spawn_detached(command);
             eprintln!("[autostart] Spawned: {}", command);
         }
-        Ok(())
     }
 }

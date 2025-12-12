@@ -198,7 +198,6 @@ impl KeybindOverlay {
             KeyAction::ShowKeybindOverlay => "Show This Keybind Help".to_string(),
             KeyAction::Quit => "Quit Window Manager".to_string(),
             KeyAction::Restart => "Restart Window Manager".to_string(),
-            KeyAction::Recompile => "Recompile Window Manager".to_string(),
             KeyAction::KillClient => "Close Focused Window".to_string(),
             KeyAction::Spawn => match &binding.arg {
                 Arg::Str(cmd) => format!("Launch: {}", cmd),

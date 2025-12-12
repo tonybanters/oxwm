@@ -1,13 +1,32 @@
-use std::ptr;
+use std::process::{Command, Stdio};
 
-pub fn prevent_zombie_processes() {
-    unsafe {
-        let mut sa: libc::sigaction = std::mem::zeroed();
-        libc::sigemptyset(&mut sa.sa_mask);
-        sa.sa_flags = libc::SA_NOCLDSTOP | libc::SA_NOCLDWAIT | libc::SA_RESTART;
-        sa.sa_sigaction = libc::SIG_IGN;
-        libc::sigaction(libc::SIGCHLD, &sa, ptr::null_mut());
+pub fn spawn_detached(cmd: &str) {
+    if let Ok(mut child) = Command::new("sh")
+        .arg("-c")
+        .arg(format!("({}) &", cmd))
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+    {
+        let _ = child.wait();
+    }
+}
 
-        while libc::waitpid(-1, ptr::null_mut(), libc::WNOHANG) > 0 {}
+pub fn spawn_detached_with_args(program: &str, args: &[&str]) {
+    let escaped_args: Vec<String> = args.iter().map(|a| shell_escape(a)).collect();
+    let full_cmd = if escaped_args.is_empty() {
+        program.to_string()
+    } else {
+        format!("{} {}", program, escaped_args.join(" "))
+    };
+    spawn_detached(&full_cmd)
+}
+
+fn shell_escape(s: &str) -> String {
+    if s.contains(|c: char| c.is_whitespace() || c == '\'' || c == '"' || c == '\\') {
+        format!("'{}'", s.replace('\'', "'\\''"))
+    } else {
+        s.to_string()
     }
 }
