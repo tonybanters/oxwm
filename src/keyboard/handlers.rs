@@ -5,7 +5,7 @@ use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 
 use crate::errors::X11Error;
-use crate::keyboard::keysyms::{self, Keysym};
+use crate::keyboard::keysyms::{self, Keysym, format_keysym};
 
 #[derive(Debug, Copy, Clone, Deserialize, PartialEq)]
 pub enum KeyAction {
@@ -47,13 +47,22 @@ impl Arg {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct KeyPress {
     pub(crate) modifiers: Vec<KeyButMask>,
     pub(crate) keysym: Keysym,
 }
 
-#[derive(Clone)]
+impl std::fmt::Debug for KeyPress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("KeyPress")
+            .field("modifiers", &self.modifiers)
+            .field("keysym", &format_keysym(self.keysym))
+            .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct KeyBinding {
     pub(crate) keys: Vec<KeyPress>,
     pub(crate) func: KeyAction,

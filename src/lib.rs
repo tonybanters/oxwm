@@ -20,13 +20,13 @@ pub mod prelude {
     pub use x11rb::protocol::xproto::KeyButMask;
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LayoutSymbolOverride {
     pub name: String,
     pub symbol: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct WindowRule {
     pub class: Option<String>,
     pub instance: Option<String>,
@@ -54,7 +54,7 @@ impl WindowRule {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     // Appearance
     pub border_width: u32,
@@ -98,7 +98,7 @@ pub struct Config {
     pub autostart: Vec<String>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct ColorScheme {
     pub foreground: u32,
     pub background: u32,
