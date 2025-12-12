@@ -123,7 +123,15 @@ impl KeybindOverlay {
         if self.base.is_visible {
             self.hide(connection)?;
         } else {
-            self.show(connection, font, keybindings, monitor_x, monitor_y, screen_width, screen_height)?;
+            self.show(
+                connection,
+                font,
+                keybindings,
+                monitor_x,
+                monitor_y,
+                screen_width,
+                screen_height,
+            )?;
         }
         Ok(())
     }

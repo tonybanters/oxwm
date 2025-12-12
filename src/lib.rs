@@ -38,9 +38,18 @@ pub struct WindowRule {
 
 impl WindowRule {
     pub fn matches(&self, class: &str, instance: &str, title: &str) -> bool {
-        let class_matches = self.class.as_ref().map_or(true, |c| class.contains(c.as_str()));
-        let instance_matches = self.instance.as_ref().map_or(true, |i| instance.contains(i.as_str()));
-        let title_matches = self.title.as_ref().map_or(true, |t| title.contains(t.as_str()));
+        let class_matches = self
+            .class
+            .as_ref()
+            .map_or(true, |c| class.contains(c.as_str()));
+        let instance_matches = self
+            .instance
+            .as_ref()
+            .map_or(true, |i| instance.contains(i.as_str()));
+        let title_matches = self
+            .title
+            .as_ref()
+            .map_or(true, |t| title.contains(t.as_str()));
         class_matches && instance_matches && title_matches
     }
 }
@@ -142,16 +151,36 @@ impl Default for Config {
                         "dmenu_run -l 10".to_string(),
                     ]),
                 ),
-                KeyBinding::single_key(vec![MODKEY], keysyms::XK_Q, KeyAction::KillClient, Arg::None),
-                KeyBinding::single_key(vec![MODKEY], keysyms::XK_N, KeyAction::CycleLayout, Arg::None),
+                KeyBinding::single_key(
+                    vec![MODKEY],
+                    keysyms::XK_Q,
+                    KeyAction::KillClient,
+                    Arg::None,
+                ),
+                KeyBinding::single_key(
+                    vec![MODKEY],
+                    keysyms::XK_N,
+                    KeyAction::CycleLayout,
+                    Arg::None,
+                ),
                 KeyBinding::single_key(
                     vec![MODKEY, SHIFT],
                     keysyms::XK_F,
                     KeyAction::ToggleFullScreen,
                     Arg::None,
                 ),
-                KeyBinding::single_key(vec![MODKEY], keysyms::XK_A, KeyAction::ToggleGaps, Arg::None),
-                KeyBinding::single_key(vec![MODKEY, SHIFT], keysyms::XK_Q, KeyAction::Quit, Arg::None),
+                KeyBinding::single_key(
+                    vec![MODKEY],
+                    keysyms::XK_A,
+                    KeyAction::ToggleGaps,
+                    Arg::None,
+                ),
+                KeyBinding::single_key(
+                    vec![MODKEY, SHIFT],
+                    keysyms::XK_Q,
+                    KeyAction::Quit,
+                    Arg::None,
+                ),
                 KeyBinding::single_key(
                     vec![MODKEY, SHIFT],
                     keysyms::XK_R,

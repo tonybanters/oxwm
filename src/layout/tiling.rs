@@ -124,7 +124,8 @@ impl Layout for TilingLayout {
         let mut master_width = stack_width;
 
         if num_master > 0 && window_count > num_master_usize {
-            stack_width = ((master_width as f32 - inner_gap_vertical as f32) * (1.0 - master_factor)) as i32;
+            stack_width =
+                ((master_width as f32 - inner_gap_vertical as f32) * (1.0 - master_factor)) as i32;
             master_width = master_width - inner_gap_vertical as i32 - stack_width;
             stack_x = master_x + master_width + inner_gap_vertical as i32;
         }

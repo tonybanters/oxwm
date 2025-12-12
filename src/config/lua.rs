@@ -48,5 +48,5 @@ pub fn parse_lua_config(
         scheme_occupied: builder_data.scheme_occupied,
         scheme_selected: builder_data.scheme_selected,
         autostart: builder_data.autostart,
-    })
+    });
 }

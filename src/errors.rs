@@ -47,7 +47,11 @@ impl std::fmt::Display for WmError {
             Self::Io(error) => write!(f, "{}", error),
             Self::Config(error) => write!(f, "{}", error),
             Self::Block(error) => write!(f, "{}", error),
-            Self::Autostart(command, error) => write!(f, "Failed to spawn autostart command '{}': {}", command, error),
+            Self::Autostart(command, error) => write!(
+                f,
+                "Failed to spawn autostart command '{}': {}",
+                command, error
+            ),
         }
     }
 }

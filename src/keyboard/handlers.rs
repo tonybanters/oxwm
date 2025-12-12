@@ -118,7 +118,12 @@ impl KeyboardMapping {
         self.syms.get(index).copied().unwrap_or(0)
     }
 
-    pub fn find_keycode(&self, keysym: Keysym, min_keycode: Keycode, max_keycode: Keycode) -> Option<Keycode> {
+    pub fn find_keycode(
+        &self,
+        keysym: Keysym,
+        min_keycode: Keycode,
+        max_keycode: Keycode,
+    ) -> Option<Keycode> {
         for keycode in min_keycode..=max_keycode {
             let index = (keycode - self.min_keycode) as usize * self.keysyms_per_keycode as usize;
             if let Some(&sym) = self.syms.get(index) {
@@ -194,7 +199,9 @@ pub fn grab_keys(
     }
 
     if current_key > 0 {
-        if let Some(escape_keycode) = mapping.find_keycode(keysyms::XK_ESCAPE, min_keycode, max_keycode) {
+        if let Some(escape_keycode) =
+            mapping.find_keycode(keysyms::XK_ESCAPE, min_keycode, max_keycode)
+        {
             connection.grab_key(
                 true,
                 root,

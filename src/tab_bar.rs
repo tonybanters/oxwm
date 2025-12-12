@@ -1,11 +1,11 @@
+use crate::ColorScheme;
 use crate::bar::font::{Font, FontDraw};
 use crate::errors::X11Error;
 use crate::layout::tabbed::TAB_BAR_HEIGHT;
-use crate::ColorScheme;
+use x11rb::COPY_DEPTH_FROM_PARENT;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 use x11rb::rust_connection::RustConnection;
-use x11rb::COPY_DEPTH_FROM_PARENT;
 
 pub struct TabBar {
     window: Window,
@@ -117,11 +117,7 @@ impl TabBar {
 
         unsafe {
             let gc = x11::xlib::XCreateGC(self.display, self.pixmap, 0, std::ptr::null_mut());
-            x11::xlib::XSetForeground(
-                self.display,
-                gc,
-                self.scheme_normal.background as u64,
-            );
+            x11::xlib::XSetForeground(self.display, gc, self.scheme_normal.background as u64);
             x11::xlib::XFillRectangle(
                 self.display,
                 self.pixmap,
@@ -195,7 +191,8 @@ impl TabBar {
 
     fn copy_pixmap_to_window(&self) {
         unsafe {
-            let gc = x11::xlib::XCreateGC(self.display, self.window as u64, 0, std::ptr::null_mut());
+            let gc =
+                x11::xlib::XCreateGC(self.display, self.window as u64, 0, std::ptr::null_mut());
             x11::xlib::XCopyArea(
                 self.display,
                 self.pixmap,
@@ -212,11 +209,7 @@ impl TabBar {
         }
     }
 
-    pub fn get_clicked_window(
-        &self,
-        windows: &[(Window, String)],
-        click_x: i16,
-    ) -> Option<Window> {
+    pub fn get_clicked_window(&self, windows: &[(Window, String)], click_x: i16) -> Option<Window> {
         if windows.is_empty() {
             return None;
         }

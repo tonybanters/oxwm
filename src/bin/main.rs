@@ -43,14 +43,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if should_restart {
         use std::os::unix::process::CommandExt;
-        let error = std::process::Command::new(&arguments[0]).args(&arguments[1..]).exec();
+        let error = std::process::Command::new(&arguments[0])
+            .args(&arguments[1..])
+            .exec();
         eprintln!("Failed to restart: {}", error);
     }
 
     Ok(())
 }
 
-fn load_config(custom_path: Option<PathBuf>) -> Result<(oxwm::Config, bool), Box<dyn std::error::Error>> {
+fn load_config(
+    custom_path: Option<PathBuf>,
+) -> Result<(oxwm::Config, bool), Box<dyn std::error::Error>> {
     let config_path = if let Some(path) = custom_path {
         path
     } else {

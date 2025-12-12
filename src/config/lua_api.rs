@@ -2,11 +2,11 @@ use mlua::{Lua, Table, Value};
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::ColorScheme;
 use crate::bar::BlockConfig;
 use crate::errors::ConfigError;
 use crate::keyboard::handlers::{Arg, KeyAction, KeyBinding, KeyPress};
 use crate::keyboard::keysyms::{self, Keysym};
-use crate::ColorScheme;
 use x11rb::protocol::xproto::KeyButMask;
 
 #[derive(Clone)]
@@ -99,18 +99,19 @@ pub fn register_api(lua: &Lua) -> Result<SharedBuilder, ConfigError> {
 }
 
 fn register_spawn(lua: &Lua, parent: &Table, _builder: SharedBuilder) -> Result<(), ConfigError> {
-    let spawn = lua.create_function(|lua, cmd: Value| {
-        create_action_table(lua, "Spawn", cmd)
-    })?;
-    let spawn_terminal = lua.create_function(|lua, ()| {
-        create_action_table(lua, "SpawnTerminal", Value::Nil)
-    })?;
+    let spawn = lua.create_function(|lua, cmd: Value| create_action_table(lua, "Spawn", cmd))?;
+    let spawn_terminal =
+        lua.create_function(|lua, ()| create_action_table(lua, "SpawnTerminal", Value::Nil))?;
     parent.set("spawn", spawn)?;
     parent.set("spawn_terminal", spawn_terminal)?;
     Ok(())
 }
 
-fn register_key_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<(), ConfigError> {
+fn register_key_module(
+    lua: &Lua,
+    parent: &Table,
+    builder: SharedBuilder,
+) -> Result<(), ConfigError> {
     let key_table = lua.create_table()?;
 
     let builder_clone = builder.clone();
@@ -153,7 +154,11 @@ fn register_key_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Res
     Ok(())
 }
 
-fn register_gaps_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<(), ConfigError> {
+fn register_gaps_module(
+    lua: &Lua,
+    parent: &Table,
+    builder: SharedBuilder,
+) -> Result<(), ConfigError> {
     let gaps_table = lua.create_table()?;
 
     let builder_clone = builder.clone();
@@ -206,7 +211,11 @@ fn register_gaps_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Re
     Ok(())
 }
 
-fn register_border_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<(), ConfigError> {
+fn register_border_module(
+    lua: &Lua,
+    parent: &Table,
+    builder: SharedBuilder,
+) -> Result<(), ConfigError> {
     let border_table = lua.create_table()?;
 
     let builder_clone = builder.clone();
@@ -239,17 +248,13 @@ fn register_border_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> 
 fn register_client_module(lua: &Lua, parent: &Table) -> Result<(), ConfigError> {
     let client_table = lua.create_table()?;
 
-    let kill = lua.create_function(|lua, ()| {
-        create_action_table(lua, "KillClient", Value::Nil)
-    })?;
+    let kill = lua.create_function(|lua, ()| create_action_table(lua, "KillClient", Value::Nil))?;
 
-    let toggle_fullscreen = lua.create_function(|lua, ()| {
-        create_action_table(lua, "ToggleFullScreen", Value::Nil)
-    })?;
+    let toggle_fullscreen =
+        lua.create_function(|lua, ()| create_action_table(lua, "ToggleFullScreen", Value::Nil))?;
 
-    let toggle_floating = lua.create_function(|lua, ()| {
-        create_action_table(lua, "ToggleFloating", Value::Nil)
-    })?;
+    let toggle_floating =
+        lua.create_function(|lua, ()| create_action_table(lua, "ToggleFloating", Value::Nil))?;
 
     let focus_stack = lua.create_function(|lua, dir: i32| {
         create_action_table(lua, "FocusStack", Value::Integer(dir as i64))
@@ -272,12 +277,15 @@ fn register_client_module(lua: &Lua, parent: &Table) -> Result<(), ConfigError> 
 fn register_layout_module(lua: &Lua, parent: &Table) -> Result<(), ConfigError> {
     let layout_table = lua.create_table()?;
 
-    let cycle = lua.create_function(|lua, ()| {
-        create_action_table(lua, "CycleLayout", Value::Nil)
-    })?;
+    let cycle =
+        lua.create_function(|lua, ()| create_action_table(lua, "CycleLayout", Value::Nil))?;
 
     let set = lua.create_function(|lua, name: String| {
-        create_action_table(lua, "ChangeLayout", Value::String(lua.create_string(&name)?))
+        create_action_table(
+            lua,
+            "ChangeLayout",
+            Value::String(lua.create_string(&name)?),
+        )
     })?;
 
     layout_table.set("cycle", cycle)?;
@@ -330,7 +338,11 @@ fn register_monitor_module(lua: &Lua, parent: &Table) -> Result<(), ConfigError>
     Ok(())
 }
 
-fn register_rule_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<(), ConfigError> {
+fn register_rule_module(
+    lua: &Lua,
+    parent: &Table,
+    builder: SharedBuilder,
+) -> Result<(), ConfigError> {
     let rule_table = lua.create_table()?;
 
     let builder_clone = builder.clone();
@@ -369,7 +381,11 @@ fn register_rule_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Re
     Ok(())
 }
 
-fn register_bar_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<(), ConfigError> {
+fn register_bar_module(
+    lua: &Lua,
+    parent: &Table,
+    builder: SharedBuilder,
+) -> Result<(), ConfigError> {
     let bar_table = lua.create_table()?;
 
     let builder_clone = builder.clone();
@@ -380,35 +396,59 @@ fn register_bar_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Res
 
     let block_table = lua.create_table()?;
 
-    let ram = lua.create_function(|lua, config: Table| {
-        create_block_config(lua, config, "Ram", None)
-    })?;
+    let ram =
+        lua.create_function(|lua, config: Table| create_block_config(lua, config, "Ram", None))?;
 
     let datetime = lua.create_function(|lua, config: Table| {
-        let date_format: String = config.get("date_format")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.datetime: 'date_format' field is required (e.g., '%H:%M')".into()))?;
-        create_block_config(lua, config, "DateTime", Some(Value::String(lua.create_string(&date_format)?)))
+        let date_format: String = config.get("date_format").map_err(|_| {
+            mlua::Error::RuntimeError(
+                "oxwm.bar.block.datetime: 'date_format' field is required (e.g., '%H:%M')".into(),
+            )
+        })?;
+        create_block_config(
+            lua,
+            config,
+            "DateTime",
+            Some(Value::String(lua.create_string(&date_format)?)),
+        )
     })?;
 
     let shell = lua.create_function(|lua, config: Table| {
-        let command: String = config.get("command")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.shell: 'command' field is required".into()))?;
-        create_block_config(lua, config, "Shell", Some(Value::String(lua.create_string(&command)?)))
+        let command: String = config.get("command").map_err(|_| {
+            mlua::Error::RuntimeError("oxwm.bar.block.shell: 'command' field is required".into())
+        })?;
+        create_block_config(
+            lua,
+            config,
+            "Shell",
+            Some(Value::String(lua.create_string(&command)?)),
+        )
     })?;
 
     let static_block = lua.create_function(|lua, config: Table| {
-        let text: String = config.get("text")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.static: 'text' field is required".into()))?;
-        create_block_config(lua, config, "Static", Some(Value::String(lua.create_string(&text)?)))
+        let text: String = config.get("text").map_err(|_| {
+            mlua::Error::RuntimeError("oxwm.bar.block.static: 'text' field is required".into())
+        })?;
+        create_block_config(
+            lua,
+            config,
+            "Static",
+            Some(Value::String(lua.create_string(&text)?)),
+        )
     })?;
 
     let battery = lua.create_function(|lua, config: Table| {
-        let charging: String = config.get("charging")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.battery: 'charging' field is required".into()))?;
-        let discharging: String = config.get("discharging")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.battery: 'discharging' field is required".into()))?;
-        let full: String = config.get("full")
-            .map_err(|_| mlua::Error::RuntimeError("oxwm.bar.block.battery: 'full' field is required".into()))?;
+        let charging: String = config.get("charging").map_err(|_| {
+            mlua::Error::RuntimeError("oxwm.bar.block.battery: 'charging' field is required".into())
+        })?;
+        let discharging: String = config.get("discharging").map_err(|_| {
+            mlua::Error::RuntimeError(
+                "oxwm.bar.block.battery: 'discharging' field is required".into(),
+            )
+        })?;
+        let full: String = config.get("full").map_err(|_| {
+            mlua::Error::RuntimeError("oxwm.bar.block.battery: 'full' field is required".into())
+        })?;
 
         let formats_table = lua.create_table()?;
         formats_table.set("charging", charging)?;
@@ -496,44 +536,58 @@ fn register_bar_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Res
 
             let cmd = match block_type.as_str() {
                 "DateTime" => {
-                    let fmt = arg.and_then(|v| {
-                        if let Value::String(s) = v {
-                            s.to_str().ok().map(|s| s.to_string())
-                        } else {
-                            None
-                        }
-                    }).ok_or_else(|| mlua::Error::RuntimeError("DateTime block missing format".into()))?;
+                    let fmt = arg
+                        .and_then(|v| {
+                            if let Value::String(s) = v {
+                                s.to_str().ok().map(|s| s.to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .ok_or_else(|| {
+                            mlua::Error::RuntimeError("DateTime block missing format".into())
+                        })?;
                     BlockCommand::DateTime(fmt)
                 }
                 "Shell" => {
-                    let cmd_str = arg.and_then(|v| {
-                        if let Value::String(s) = v {
-                            s.to_str().ok().map(|s| s.to_string())
-                        } else {
-                            None
-                        }
-                    }).ok_or_else(|| mlua::Error::RuntimeError("Shell block missing command".into()))?;
+                    let cmd_str = arg
+                        .and_then(|v| {
+                            if let Value::String(s) = v {
+                                s.to_str().ok().map(|s| s.to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .ok_or_else(|| {
+                            mlua::Error::RuntimeError("Shell block missing command".into())
+                        })?;
                     BlockCommand::Shell(cmd_str)
                 }
                 "Ram" => BlockCommand::Ram,
                 "Static" => {
-                    let text = arg.and_then(|v| {
-                        if let Value::String(s) = v {
-                            s.to_str().ok().map(|s| s.to_string())
-                        } else {
-                            None
-                        }
-                    }).unwrap_or_default();
+                    let text = arg
+                        .and_then(|v| {
+                            if let Value::String(s) = v {
+                                s.to_str().ok().map(|s| s.to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or_default();
                     BlockCommand::Static(text)
                 }
                 "Battery" => {
-                    let formats = arg.and_then(|v| {
-                        if let Value::Table(t) = v {
-                            Some(t)
-                        } else {
-                            None
-                        }
-                    }).ok_or_else(|| mlua::Error::RuntimeError("Battery block missing formats".into()))?;
+                    let formats = arg
+                        .and_then(|v| {
+                            if let Value::Table(t) = v {
+                                Some(t)
+                            } else {
+                                None
+                            }
+                        })
+                        .ok_or_else(|| {
+                            mlua::Error::RuntimeError("Battery block missing formats".into())
+                        })?;
 
                     let charging: String = formats.get("charging")?;
                     let discharging: String = formats.get("discharging")?;
@@ -545,7 +599,12 @@ fn register_bar_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Res
                         format_full: full,
                     }
                 }
-                _ => return Err(mlua::Error::RuntimeError(format!("Unknown block type '{}'", block_type))),
+                _ => {
+                    return Err(mlua::Error::RuntimeError(format!(
+                        "Unknown block type '{}'",
+                        block_type
+                    )));
+                }
             };
 
             let color_u32 = parse_color_value(color_val)?;
@@ -566,50 +625,53 @@ fn register_bar_module(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Res
     })?;
 
     let builder_clone = builder.clone();
-    let set_scheme_normal = lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
-        let foreground = parse_color_value(fg)?;
-        let background = parse_color_value(bg)?;
-        let underline = parse_color_value(ul)?;
+    let set_scheme_normal =
+        lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
+            let foreground = parse_color_value(fg)?;
+            let background = parse_color_value(bg)?;
+            let underline = parse_color_value(ul)?;
 
-        builder_clone.borrow_mut().scheme_normal = ColorScheme {
-            foreground,
-            background,
-            underline,
-        };
-        Ok(())
-    })?;
-
-    let builder_clone = builder.clone();
-    let set_scheme_occupied = lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
-        let foreground = parse_color_value(fg)?;
-        let background = parse_color_value(bg)?;
-        let underline = parse_color_value(ul)?;
-
-        builder_clone.borrow_mut().scheme_occupied = ColorScheme {
-            foreground,
-            background,
-            underline,
-        };
-        Ok(())
-    })?;
+            builder_clone.borrow_mut().scheme_normal = ColorScheme {
+                foreground,
+                background,
+                underline,
+            };
+            Ok(())
+        })?;
 
     let builder_clone = builder.clone();
-    let set_scheme_selected = lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
-        let foreground = parse_color_value(fg)?;
-        let background = parse_color_value(bg)?;
-        let underline = parse_color_value(ul)?;
+    let set_scheme_occupied =
+        lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
+            let foreground = parse_color_value(fg)?;
+            let background = parse_color_value(bg)?;
+            let underline = parse_color_value(ul)?;
 
-        builder_clone.borrow_mut().scheme_selected = ColorScheme {
-            foreground,
-            background,
-            underline,
-        };
-        Ok(())
-    })?;
+            builder_clone.borrow_mut().scheme_occupied = ColorScheme {
+                foreground,
+                background,
+                underline,
+            };
+            Ok(())
+        })?;
+
+    let builder_clone = builder.clone();
+    let set_scheme_selected =
+        lua.create_function(move |_, (fg, bg, ul): (Value, Value, Value)| {
+            let foreground = parse_color_value(fg)?;
+            let background = parse_color_value(bg)?;
+            let underline = parse_color_value(ul)?;
+
+            builder_clone.borrow_mut().scheme_selected = ColorScheme {
+                foreground,
+                background,
+                underline,
+            };
+            Ok(())
+        })?;
 
     bar_table.set("set_font", set_font)?;
     bar_table.set("block", block_table)?;
-    bar_table.set("add_block", add_block)?;  // Deprecated, for backwards compatibility
+    bar_table.set("add_block", add_block)?; // Deprecated, for backwards compatibility
     bar_table.set("set_blocks", set_blocks)?;
     bar_table.set("set_scheme_normal", set_scheme_normal)?;
     bar_table.set("set_scheme_occupied", set_scheme_occupied)?;
@@ -639,17 +701,12 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
         Ok(())
     })?;
 
-    let quit = lua.create_function(|lua, ()| {
-        create_action_table(lua, "Quit", Value::Nil)
-    })?;
+    let quit = lua.create_function(|lua, ()| create_action_table(lua, "Quit", Value::Nil))?;
 
-    let restart = lua.create_function(|lua, ()| {
-        create_action_table(lua, "Restart", Value::Nil)
-    })?;
+    let restart = lua.create_function(|lua, ()| create_action_table(lua, "Restart", Value::Nil))?;
 
-    let toggle_gaps = lua.create_function(|lua, ()| {
-        create_action_table(lua, "ToggleGaps", Value::Nil)
-    })?;
+    let toggle_gaps =
+        lua.create_function(|lua, ()| create_action_table(lua, "ToggleGaps", Value::Nil))?;
 
     let set_master_factor = lua.create_function(|lua, delta: i32| {
         create_action_table(lua, "SetMasterFactor", Value::Integer(delta as i64))
@@ -659,9 +716,8 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
         create_action_table(lua, "IncNumMaster", Value::Integer(delta as i64))
     })?;
 
-    let show_keybinds = lua.create_function(|lua, ()| {
-        create_action_table(lua, "ShowKeybindOverlay", Value::Nil)
-    })?;
+    let show_keybinds =
+        lua.create_function(|lua, ()| create_action_table(lua, "ShowKeybindOverlay", Value::Nil))?;
 
     let focus_monitor = lua.create_function(|lua, idx: i32| {
         create_action_table(lua, "FocusMonitor", Value::Integer(idx as i64))
@@ -669,10 +725,10 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
 
     let builder_clone = builder.clone();
     let set_layout_symbol = lua.create_function(move |_, (name, symbol): (String, String)| {
-        builder_clone.borrow_mut().layout_symbols.push(crate::LayoutSymbolOverride {
-            name,
-            symbol,
-        });
+        builder_clone
+            .borrow_mut()
+            .layout_symbols
+            .push(crate::LayoutSymbolOverride { name, symbol });
         Ok(())
     })?;
 
@@ -730,7 +786,10 @@ fn parse_modkey_string(s: &str) -> Result<KeyButMask, ConfigError> {
         "Mod5" => Ok(KeyButMask::MOD5),
         "Shift" => Ok(KeyButMask::SHIFT),
         "Control" => Ok(KeyButMask::CONTROL),
-        _ => Err(ConfigError::InvalidModkey(format!("'{}' is not a valid modifier. Use one of: Mod1, Mod4, Shift, Control", s))),
+        _ => Err(ConfigError::InvalidModkey(format!(
+            "'{}' is not a valid modifier. Use one of: Mod1, Mod4, Shift, Control",
+            s
+        ))),
     }
 }
 
@@ -790,7 +849,10 @@ fn string_to_action(s: &str) -> mlua::Result<KeyAction> {
         "FocusMonitor" => Ok(KeyAction::FocusMonitor),
         "TagMonitor" => Ok(KeyAction::TagMonitor),
         "ShowKeybindOverlay" => Ok(KeyAction::ShowKeybindOverlay),
-        _ => Err(mlua::Error::RuntimeError(format!("unknown action '{}'. this is an internal error, please report it", s))),
+        _ => Err(mlua::Error::RuntimeError(format!(
+            "unknown action '{}'. this is an internal error, please report it",
+            s
+        ))),
     }
 }
 
@@ -826,14 +888,26 @@ fn parse_color_value(value: Value) -> mlua::Result<u32> {
         Value::String(s) => {
             let s = s.to_str()?;
             if s.starts_with('#') {
-                u32::from_str_radix(&s[1..], 16)
-                    .map_err(|e| mlua::Error::RuntimeError(format!("invalid hex color '{}': {}. use format like #ff0000 or 0xff0000", s, e)))
+                u32::from_str_radix(&s[1..], 16).map_err(|e| {
+                    mlua::Error::RuntimeError(format!(
+                        "invalid hex color '{}': {}. use format like #ff0000 or 0xff0000",
+                        s, e
+                    ))
+                })
             } else if s.starts_with("0x") {
-                u32::from_str_radix(&s[2..], 16)
-                    .map_err(|e| mlua::Error::RuntimeError(format!("invalid hex color '{}': {}. use format like 0xff0000 or #ff0000", s, e)))
+                u32::from_str_radix(&s[2..], 16).map_err(|e| {
+                    mlua::Error::RuntimeError(format!(
+                        "invalid hex color '{}': {}. use format like 0xff0000 or #ff0000",
+                        s, e
+                    ))
+                })
             } else {
-                s.parse::<u32>()
-                    .map_err(|e| mlua::Error::RuntimeError(format!("invalid color '{}': {}. use hex format like 0xff0000 or #ff0000", s, e)))
+                s.parse::<u32>().map_err(|e| {
+                    mlua::Error::RuntimeError(format!(
+                        "invalid color '{}': {}. use hex format like 0xff0000 or #ff0000",
+                        s, e
+                    ))
+                })
             }
         }
         _ => Err(mlua::Error::RuntimeError(
@@ -842,7 +916,12 @@ fn parse_color_value(value: Value) -> mlua::Result<u32> {
     }
 }
 
-fn create_block_config(lua: &Lua, config: Table, block_type: &str, arg: Option<Value>) -> mlua::Result<Table> {
+fn create_block_config(
+    lua: &Lua,
+    config: Table,
+    block_type: &str,
+    arg: Option<Value>,
+) -> mlua::Result<Table> {
     let table = lua.create_table()?;
     table.set("__block_type", block_type)?;
 
