@@ -131,6 +131,13 @@ impl FontDraw {
             x11::xlib::XFlush(display);
         }
     }
+
+    pub fn sync(&self) {
+        unsafe {
+            let display = x11::xft::XftDrawDisplay(self.xft_draw);
+            x11::xlib::XSync(display, 0);
+        }
+    }
 }
 
 impl Drop for FontDraw {

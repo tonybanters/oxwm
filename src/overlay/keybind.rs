@@ -103,9 +103,10 @@ impl KeybindOverlay {
         self.last_shown_at = Some(Instant::now());
         self.max_key_width = max_key_width;
 
-        self.base.show(connection)?;
-
+        self.base.is_visible = true;
         self.draw(connection, font)?;
+
+        self.base.show(connection)?;
 
         Ok(())
     }
@@ -305,9 +306,8 @@ impl Overlay for KeybindOverlay {
             y += line_height as i16;
         }
 
-        self.base.font_draw.flush();
-
         connection.flush()?;
+        self.base.font_draw.sync();
 
         Ok(())
     }

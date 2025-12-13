@@ -73,8 +73,9 @@ impl ErrorOverlay {
         let y = monitor_y + ((screen_height - height) / 2) as i16;
 
         self.base.configure(connection, x, y, width, height)?;
-        self.base.show(connection)?;
+        self.base.is_visible = true;
         self.draw(connection, font)?;
+        self.base.show(connection)?;
         Ok(())
     }
 
@@ -141,6 +142,7 @@ impl Overlay for ErrorOverlay {
             y += line_height as i16;
         }
         connection.flush()?;
+        self.base.font_draw.sync();
         Ok(())
     }
 }
