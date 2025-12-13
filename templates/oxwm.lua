@@ -205,6 +205,14 @@ oxwm.tag = {}
 ---@return table Action table for keybinding
 function oxwm.tag.view(index) end
 
+---View/switch to next tag
+---@return table Action table for keybinding
+function oxwm.tag.view_next() end
+
+---View/switch to previous tag
+---@return table Action table for keybinding
+function oxwm.tag.view_previous() end
+
 ---Move focused window to tag
 ---@param index integer Tag index (0-based)
 ---@return table Action table for keybinding

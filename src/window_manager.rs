@@ -20,6 +20,12 @@ pub fn tag_mask(tag: usize) -> TagMask {
     1 << tag
 }
 
+/// Get back a tag index from a [`TagMask`]
+pub fn unmask_tag(mask: TagMask) -> usize {
+    // mask only has one bit set, so this works.
+    mask.trailing_zeros() as usize
+}
+
 struct AtomCache {
     net_current_desktop: Atom,
     net_client_info: Atom,
@@ -805,6 +811,20 @@ impl WindowManager {
                     self.view_tag(*tag_index as usize)?;
                 }
             }
+            KeyAction::ViewNextTag => {
+                let monitor = self.get_selected_monitor();
+                let current_tag_mask = monitor.get_selected_tag();
+
+                let current_tag_index = unmask_tag(current_tag_mask);
+                self.view_tag(current_tag_index.saturating_add(1))?;
+            }
+            KeyAction::ViewPreviousTag => {
+                let monitor = self.get_selected_monitor();
+                let current_tag_mask = monitor.get_selected_tag();
+
+                let current_tag_index = unmask_tag(current_tag_mask);
+                self.view_tag(current_tag_index.saturating_sub(1))?;
+            }
             KeyAction::ToggleView => {
                 if let Arg::Int(tag_index) = arg {
                     self.toggleview(*tag_index as usize)?;
@@ -1455,8 +1475,7 @@ impl WindowManager {
             for window in &windows {
                 self.connection.configure_window(
                     *window,
-                    &x11rb::protocol::xproto::ConfigureWindowAux::new()
-                        .border_width(0),
+                    &x11rb::protocol::xproto::ConfigureWindowAux::new().border_width(0),
                 )?;
             }
 
@@ -4173,6 +4192,10 @@ impl WindowManager {
             self.update_bar()?;
         }
         Ok(())
+    }
+
+    fn get_selected_monitor(&self) -> &Monitor {
+        &self.monitors[self.selected_monitor]
     }
 
     fn run_autostart_commands(&self) {

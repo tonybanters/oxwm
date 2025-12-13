@@ -1,3 +1,4 @@
+use crate::client::TagMask;
 use crate::errors::WmError;
 use x11rb::protocol::xinerama::ConnectionExt as _;
 use x11rb::protocol::xproto::{Screen, Window};
@@ -74,6 +75,10 @@ impl Monitor {
             && x < self.screen_x + self.screen_width
             && y >= self.screen_y
             && y < self.screen_y + self.screen_height
+    }
+
+    pub fn get_selected_tag(&self) -> TagMask {
+        self.tagset[self.selected_tags_index]
     }
 }
 

@@ -17,6 +17,8 @@ pub enum KeyAction {
     Quit,
     Restart,
     ViewTag,
+    ViewNextTag,
+    ViewPreviousTag,
     ToggleView,
     MoveToTag,
     ToggleTag,
