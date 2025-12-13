@@ -2535,7 +2535,90 @@ impl WindowManager {
             }
         }
 
+        if self.config.auto_tile && !was_floating && !is_normie {
+            let drop_monitor_idx = self
+                .clients
+                .get(&window)
+                .map(|c| c.monitor_index)
+                .unwrap_or(monitor_idx);
+
+            if let Some((x, y, w, h)) = final_client {
+                let center = (x as i32 + w as i32 / 2, y as i32 + h as i32 / 2);
+                if let Some(target) = self.tiled_window_at(window, drop_monitor_idx, center) {
+                    self.detach(window);
+                    self.insert_before(window, target, drop_monitor_idx);
+                }
+            }
+
+            self.floating_windows.remove(&window);
+            if let Some(client) = self.clients.get_mut(&window) {
+                client.is_floating = false;
+            }
+            self.apply_layout()?;
+        }
+
         Ok(())
+    }
+
+    fn tiled_window_at(
+        &self,
+        exclude: Window,
+        monitor_idx: usize,
+        (px, py): (i32, i32),
+    ) -> Option<Window> {
+        let monitor = self.monitors.get(monitor_idx)?;
+        let tags = monitor.tagset[monitor.selected_tags_index];
+        let mut current = monitor.clients_head;
+
+        while let Some(win) = current {
+            let c = self.clients.get(&win)?;
+            current = c.next;
+
+            if win == exclude || c.is_floating || (c.tags & tags) == 0 {
+                continue;
+            }
+
+            let (x, y) = (c.x_position as i32, c.y_position as i32);
+            let (w, h) = (
+                c.width as i32 + c.border_width as i32 * 2,
+                c.height as i32 + c.border_width as i32 * 2,
+            );
+
+            if px >= x && px < x + w && py >= y && py < y + h {
+                return Some(win);
+            }
+        }
+        None
+    }
+
+    fn insert_before(&mut self, window: Window, target: Window, monitor_idx: usize) {
+        let Some(monitor) = self.monitors.get_mut(monitor_idx) else {
+            return;
+        };
+
+        if monitor.clients_head == Some(target) {
+            if let Some(c) = self.clients.get_mut(&window) {
+                c.next = Some(target);
+            }
+            monitor.clients_head = Some(window);
+            return;
+        }
+
+        let mut current = monitor.clients_head;
+        while let Some(w) = current {
+            let Some(c) = self.clients.get(&w) else { break };
+            if c.next != Some(target) {
+                current = c.next;
+                continue;
+            }
+            if let Some(prev) = self.clients.get_mut(&w) {
+                prev.next = Some(window);
+            }
+            if let Some(inserted) = self.clients.get_mut(&window) {
+                inserted.next = Some(target);
+            }
+            break;
+        }
     }
 
     fn resize_window_with_mouse(&mut self, window: Window) -> WmResult<()> {
@@ -2574,11 +2657,31 @@ impl WindowManager {
             return Ok(());
         };
 
-        if self.monitors.get(monitor_idx).is_none() {
-            return Ok(());
-        }
+        let monitor = match self.monitors.get(monitor_idx) {
+            Some(m) => m,
+            None => return Ok(()),
+        };
 
         let is_normie = self.layout.name() == "normie";
+
+        if self.config.auto_tile && !was_floating && !is_normie {
+            let mut tiled_count = 0;
+            let mut current = monitor.clients_head;
+            while let Some(w) = current {
+                if let Some(c) = self.clients.get(&w) {
+                    let visible = (c.tags & monitor.tagset[monitor.selected_tags_index]) != 0;
+                    if visible && !c.is_floating {
+                        tiled_count += 1;
+                    }
+                    current = c.next;
+                } else {
+                    break;
+                }
+            }
+            if tiled_count <= 1 {
+                return Ok(());
+            }
+        }
 
         if !was_floating && !is_normie {
             self.toggle_floating()?;
@@ -2696,6 +2799,14 @@ impl WindowManager {
                 self.selected_monitor = new_monitor;
                 self.focus(None)?;
             }
+        }
+
+        if self.config.auto_tile && !was_floating && !is_normie {
+            self.floating_windows.remove(&window);
+            if let Some(client) = self.clients.get_mut(&window) {
+                client.is_floating = false;
+            }
+            self.apply_layout()?;
         }
 
         Ok(())

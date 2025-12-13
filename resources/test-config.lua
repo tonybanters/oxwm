@@ -33,6 +33,7 @@ local modkey = "Mod1"
 oxwm.set_terminal("st")
 oxwm.set_modkey(modkey)
 oxwm.set_tags({ "1", "2", "3", "4", "5", "6", "7", "8", "9" })
+oxwm.auto_tile(true);
 
 oxwm.set_layout_symbol("tiling", "[T]")
 oxwm.set_layout_symbol("normie", "[F]")
@@ -42,7 +43,7 @@ oxwm.border.set_focused_color(colors.blue)
 oxwm.border.set_unfocused_color(colors.grey)
 
 oxwm.gaps.set_enabled(true)
-oxwm.gaps.set_smart(true)  -- Disable outer gaps when only 1 window (dwm smartgaps)
+oxwm.gaps.set_smart(true) -- Disable outer gaps when only 1 window (dwm smartgaps)
 oxwm.gaps.set_inner(5, 5)
 oxwm.gaps.set_outer(5, 5)
 
@@ -78,16 +79,16 @@ oxwm.key.bind({ modkey }, "N", oxwm.layout.cycle())
 oxwm.key.bind({ modkey }, "A", oxwm.toggle_gaps())
 
 -- Master area controls
-oxwm.key.bind({ modkey }, "BracketLeft", oxwm.set_master_factor(-5))   -- Decrease master area
-oxwm.key.bind({ modkey }, "BracketRight", oxwm.set_master_factor(5))   -- Increase master area
-oxwm.key.bind({ modkey }, "I", oxwm.inc_num_master(1))                 -- More master windows
-oxwm.key.bind({ modkey }, "P", oxwm.inc_num_master(-1))                -- Fewer master windows
+oxwm.key.bind({ modkey }, "BracketLeft", oxwm.set_master_factor(-5)) -- Decrease master area
+oxwm.key.bind({ modkey }, "BracketRight", oxwm.set_master_factor(5)) -- Increase master area
+oxwm.key.bind({ modkey }, "I", oxwm.inc_num_master(1))               -- More master windows
+oxwm.key.bind({ modkey }, "P", oxwm.inc_num_master(-1))              -- Fewer master windows
 
 -- Multi-monitor controls (dwm-style)
-oxwm.key.bind({ modkey }, "Comma", oxwm.monitor.focus(-1))              -- Focus previous monitor
-oxwm.key.bind({ modkey }, "Period", oxwm.monitor.focus(1))              -- Focus next monitor
-oxwm.key.bind({ modkey, "Shift" }, "Comma", oxwm.monitor.tag(-1))      -- Send window to previous monitor
-oxwm.key.bind({ modkey, "Shift" }, "Period", oxwm.monitor.tag(1))      -- Send window to next monitor
+oxwm.key.bind({ modkey }, "Comma", oxwm.monitor.focus(-1))        -- Focus previous monitor
+oxwm.key.bind({ modkey }, "Period", oxwm.monitor.focus(1))        -- Focus next monitor
+oxwm.key.bind({ modkey, "Shift" }, "Comma", oxwm.monitor.tag(-1)) -- Send window to previous monitor
+oxwm.key.bind({ modkey, "Shift" }, "Period", oxwm.monitor.tag(1)) -- Send window to next monitor
 
 oxwm.key.bind({ modkey, "Shift" }, "Q", oxwm.quit())
 oxwm.key.bind({ modkey, "Shift" }, "R", oxwm.restart())

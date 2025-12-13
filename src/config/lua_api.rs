@@ -32,6 +32,7 @@ pub struct ConfigBuilder {
     pub scheme_occupied: ColorScheme,
     pub scheme_selected: ColorScheme,
     pub autostart: Vec<String>,
+    pub auto_tile: bool,
 }
 
 impl Default for ConfigBuilder {
@@ -70,6 +71,7 @@ impl Default for ConfigBuilder {
                 underline: 0x444444,
             },
             autostart: Vec::new(),
+            auto_tile: false,
         }
     }
 }
@@ -738,6 +740,12 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
         Ok(())
     })?;
 
+    let builder_clone = builder.clone();
+    let auto_tile = lua.create_function(move |_, enabled: bool| {
+        builder_clone.borrow_mut().auto_tile = enabled;
+        Ok(())
+    })?;
+
     parent.set("set_terminal", set_terminal)?;
     parent.set("set_modkey", set_modkey)?;
     parent.set("set_tags", set_tags)?;
@@ -750,6 +758,7 @@ fn register_misc(lua: &Lua, parent: &Table, builder: SharedBuilder) -> Result<()
     parent.set("inc_num_master", inc_num_master)?;
     parent.set("show_keybinds", show_keybinds)?;
     parent.set("focus_monitor", focus_monitor)?;
+    parent.set("auto_tile", auto_tile)?;
     Ok(())
 }
 

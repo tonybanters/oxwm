@@ -37,6 +37,10 @@ function oxwm.set_modkey(modkey) end
 ---@param tags string[] Array of tag names
 function oxwm.set_tags(tags) end
 
+---Enable or disable automatic tiling of new windows
+---@param enabled boolean Enable or disable auto-tiling
+function oxwm.auto_tile(enabled) end
+
 ---Set layout symbol override
 ---@param name string Layout name (e.g., "tiling", "normie", "tabbed", "grid", "monocle")
 ---@param symbol string Symbol to display (e.g., "[T]", "[F]", "[=]")
