@@ -7,6 +7,7 @@ pub struct Battery {
     format_charging: String,
     format_discharging: String,
     format_full: String,
+    battery_name: Option<String>,
     interval: Duration,
     color: u32,
     battery_path: String,
@@ -17,16 +18,23 @@ impl Battery {
         format_charging: &str,
         format_discharging: &str,
         format_full: &str,
+        battery_name: Option<&str>,
         interval_secs: u64,
         color: u32,
     ) -> Self {
+        let battery_name = battery_name
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("BAT0");
+        let battery_path = format!("/sys/class/power_supply/{}", battery_name);
+
         Self {
             format_charging: format_charging.to_string(),
             format_discharging: format_discharging.to_string(),
             format_full: format_full.to_string(),
+            battery_name: Some(battery_name.to_string()),
             interval: Duration::from_secs(interval_secs),
             color,
-            battery_path: "/sys/class/power_supply/BAT0".to_string(),
+            battery_path,
         }
     }
 

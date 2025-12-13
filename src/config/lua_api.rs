@@ -444,18 +444,20 @@ fn register_bar_module(
             mlua::Error::RuntimeError("oxwm.bar.block.battery: 'charging' field is required".into())
         })?;
         let discharging: String = config.get("discharging").map_err(|_| {
-            mlua::Error::RuntimeError(
-                "oxwm.bar.block.battery: 'discharging' field is required".into(),
-            )
+            mlua::Error::RuntimeError("oxwm.bar.block.battery: 'discharging' field is required".into())
         })?;
         let full: String = config.get("full").map_err(|_| {
             mlua::Error::RuntimeError("oxwm.bar.block.battery: 'full' field is required".into())
         })?;
+        let battery_name: Option<String> = config.get("battery_name").ok();
 
         let formats_table = lua.create_table()?;
         formats_table.set("charging", charging)?;
         formats_table.set("discharging", discharging)?;
         formats_table.set("full", full)?;
+        if let Some(battery_name) = battery_name {
+            formats_table.set("battery_name", battery_name)?;
+        }
 
         create_block_config(lua, config, "Battery", Some(Value::Table(formats_table)))
     })?;
@@ -594,11 +596,13 @@ fn register_bar_module(
                     let charging: String = formats.get("charging")?;
                     let discharging: String = formats.get("discharging")?;
                     let full: String = formats.get("full")?;
+                    let battery_name: Option<String> = formats.get("battery_name").ok();
 
                     BlockCommand::Battery {
                         format_charging: charging,
                         format_discharging: discharging,
                         format_full: full,
+                        battery_name: battery_name,
                     }
                 }
                 _ => {
