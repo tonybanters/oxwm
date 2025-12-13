@@ -2073,7 +2073,6 @@ impl WindowManager {
             }
         }
 
-        self.restack()?;
         self.connection.flush()?;
 
         Ok(())
@@ -3012,6 +3011,7 @@ impl WindowManager {
                         }
                     } else if event.child != x11rb::NONE {
                         self.focus(Some(event.child))?;
+                        self.restack()?;
                         self.update_tab_bars()?;
 
                         let state_clean = u16::from(event.state)
@@ -3036,6 +3036,7 @@ impl WindowManager {
                         }
                     } else if self.windows.contains(&event.event) {
                         self.focus(Some(event.event))?;
+                        self.restack()?;
                         self.update_tab_bars()?;
 
                         let state_clean = u16::from(event.state)
