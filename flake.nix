@@ -56,13 +56,26 @@
         enable = mkEnableOption "oxwm window manager";
         package = mkOption {
           type = types.package;
-          default = self.packages.${pkgs.system}.default;
+          default = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
           description = "The oxwm package to use";
+        };
+        extraSessionCommands = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Shell commands executed just before oxwm is started";
         };
       };
 
       config = mkIf cfg.enable {
-        services.displayManager.sessionPackages = [cfg.package];
+        services.xserver.windowManager.session = lib.singleton {
+          name = "oxwm";
+          start = ''
+            ${cfg.extraSessionCommands}
+            export _JAVA_AWT_WM_NONREPARENTING=1
+            ${cfg.package}/bin/oxwm &
+            waitPID=$!
+          '';
+        };
 
         environment.systemPackages = [
           cfg.package
