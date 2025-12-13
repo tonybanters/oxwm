@@ -1452,6 +1452,14 @@ impl WindowManager {
             self.toggle_bar()?;
             self.apply_layout()?;
 
+            for window in &windows {
+                self.connection.configure_window(
+                    *window,
+                    &x11rb::protocol::xproto::ConfigureWindowAux::new()
+                        .border_width(0),
+                )?;
+            }
+
             let border_width = self.config.border_width;
             let floating_windows: Vec<Window> = windows
                 .iter()
