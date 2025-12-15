@@ -93,19 +93,6 @@ local blocks = {
 		color = colors.lavender,
 		underline = false,
 	}),
-	oxwm.bar.block.shell({
-		format = "{}",
-		command = "uname -r",
-		interval = 999999999,
-		color = colors.red,
-		underline = true,
-	}),
-	oxwm.bar.block.static({
-		text = " │  ",
-		interval = 999999999,
-		color = colors.lavender,
-		underline = false,
-	}),
 	-- WiFi block (shows SSID name, "Disconnected", or "Off")
 	-- Requires NetworkManager (nmcli)
 	oxwm.bar.block.wifi({
