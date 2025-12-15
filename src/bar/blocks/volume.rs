@@ -18,7 +18,7 @@ impl Volume {
         }
     }
 
-    fn get_volume_percentage(&self) -> Result<u32, BlockError> {
+    fn get_volume_percentage(&self) -> Result<Option<u32>, BlockError> {
         // Try wpctl first (PipeWire)
         if let Ok(output) = Command::new("wpctl")
             .arg("status")
@@ -62,14 +62,14 @@ impl Volume {
                             
                             // Check if muted
                             if vol_stdout.contains("MUTED") {
-                                return Err(BlockError::CommandFailed("Muted".to_string()));
+                                return Ok(None); // None means muted
                             }
                             
                             // Extract volume (format: "Volume: 0.50" or "Volume: 0.50 [MUTED]")
                             for part in vol_stdout.split_whitespace() {
                                 if let Ok(vol) = part.parse::<f32>() {
                                     let percentage = (vol * 100.0) as u32;
-                                    return Ok(percentage);
+                                    return Ok(Some(percentage));
                                 }
                             }
                         }
@@ -104,7 +104,7 @@ impl Volume {
                         if mute_output.status.success() {
                             let mute_stdout = String::from_utf8_lossy(&mute_output.stdout);
                             if mute_stdout.contains("yes") {
-                                return Err(BlockError::CommandFailed("Muted".to_string()));
+                                return Ok(None); // None means muted
                             }
                         }
                     }
@@ -121,7 +121,7 @@ impl Volume {
                             for part in vol_stdout.split_whitespace() {
                                 if part.ends_with('%') {
                                     if let Ok(pct) = part.trim_end_matches('%').parse::<u32>() {
-                                        return Ok(pct);
+                                        return Ok(Some(pct));
                                     }
                                 }
                             }
@@ -131,18 +131,15 @@ impl Volume {
             }
         }
 
-        Ok(0)
+        Ok(Some(0))
     }
 }
 
 impl Block for Volume {
     fn content(&mut self) -> Result<String, BlockError> {
-        match self.get_volume_percentage() {
-            Ok(percentage) => Ok(self.format.replace("{}", &percentage.to_string())),
-            Err(BlockError::CommandFailed(msg)) if msg == "Muted" => {
-                Ok(self.format.replace("{}", "Muted"))
-            }
-            Err(e) => Err(e),
+        match self.get_volume_percentage()? {
+            Some(percentage) => Ok(self.format.replace("{}", &percentage.to_string())),
+            None => Ok(self.format.replace("{}", "Muted")),
         }
     }
 

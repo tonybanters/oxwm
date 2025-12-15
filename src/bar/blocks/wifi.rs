@@ -32,9 +32,13 @@ impl Wifi {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {
                     if line.starts_with("yes:") {
-                        let ssid = line.split(':').nth(1).unwrap_or("").trim();
-                        if !ssid.is_empty() {
-                            return Ok(ssid.to_string());
+                        // Split by ':' and get the SSID (second field)
+                        let parts: Vec<&str> = line.split(':').collect();
+                        if parts.len() >= 2 {
+                            let ssid = parts[1].trim();
+                            if !ssid.is_empty() {
+                                return Ok(ssid.to_string());
+                            }
                         }
                     }
                 }
