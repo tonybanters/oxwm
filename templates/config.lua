@@ -63,13 +63,13 @@ local blocks = {
 	-- 	color = colors.lavender,
 	-- 	underline = false,
 	-- }),
-	-- Volume block (shows percentage or "Muted")
-	-- Supports both PipeWire (wpctl) and PulseAudio (pactl)
+	-- --Volume block (shows percentage or "Muted")
+	-- --Supports both PipeWire (wpctl) and PulseAudio (pactl)
 	oxwm.bar.block.volume({
 		format = "VOL {}% | ",
 		interval = 5,
 		color = colors.light_blue,
-		underline = true,
+		underline = false,
 	}),
 	oxwm.bar.block.static({
 		text = " │  ",
@@ -77,15 +77,15 @@ local blocks = {
 		color = colors.lavender,
 		underline = false,
 	}),
-	-- Uncomment to add battery status (useful for laptops)
+	-- -- Uncomment to add battery status (useful for laptops)
 	oxwm.bar.block.battery({
 		format = "Bat: {}%",
-		charging = "⚡ Bat: {}%",
-		discharging = "- Bat: {}%",
-		full = "✓ Bat: {}%",
+		charging = "⚡Bat: {}%",
+		discharging = "Bat: {}%",
+		full = "Bat: {}%",
 		interval = 30,
 		color = colors.green,
-		underline = true,
+		underline = false,
 	}),
 	oxwm.bar.block.static({
 		text = " │  ",
@@ -99,7 +99,7 @@ local blocks = {
 		format = "WIFI {} | ",
 		interval = 10,
 		color = colors.cyan,
-		underline = true,
+		underline = false,
 	}),
 	oxwm.bar.block.static({
 		text = " │  ",
@@ -112,38 +112,8 @@ local blocks = {
 		date_format = "%a, %b %d - %-I:%M %P",
 		interval = 1,
 		color = colors.cyan,
-		underline = true,
+		underline = false,
 	}),
-	-- Example: Battery, Volume, WiFi, and DateTime blocks together
-	-- Uncomment to use the format: "BAT X% | VOL X% | WIFI name | datetime"
-	-- oxwm.bar.block.battery({
-	--     format = "BAT {}% | ",
-	--     charging = "BAT {}% | ",
-	--     discharging = "BAT {}% | ",
-	--     full = "BAT {}% | ",
-	--     interval = 30,
-	--     color = colors.green,
-	--     underline = true,
-	-- }),
-	-- oxwm.bar.block.volume({
-	--     format = "VOL {}% | ",
-	--     interval = 5,
-	--     color = colors.light_blue,
-	--     underline = true,
-	-- }),
-	-- oxwm.bar.block.wifi({
-	--     format = "WIFI {} | ",
-	--     interval = 10,
-	--     color = colors.cyan,
-	--     underline = true,
-	-- }),
-	-- oxwm.bar.block.datetime({
-	--     format = "{}",
-	--     date_format = "%a, %b %d, %I:%M %p",
-	--     interval = 60,
-	--     color = colors.cyan,
-	--     underline = true,
-	-- }),
 }
 
 -------------------------------------------------------------------------------
