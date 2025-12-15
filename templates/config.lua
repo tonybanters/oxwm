@@ -109,7 +109,7 @@ local blocks = {
 	}),
 	oxwm.bar.block.datetime({
 		format = "{}",
-		date_format = "%a, %b %d - %-I:%M %P",
+		date_format = "%a, %b %d %-I:%M %P",
 		interval = 1,
 		color = colors.cyan,
 		underline = false,
