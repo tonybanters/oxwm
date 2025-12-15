@@ -66,7 +66,7 @@ local blocks = {
 	-- --Volume block (shows percentage or "Muted")
 	-- --Supports both PipeWire (wpctl) and PulseAudio (pactl)
 	oxwm.bar.block.volume({
-		format = "VOL {}% | ",
+		format = "VOL {}% ",
 		interval = 5,
 		color = colors.light_blue,
 		underline = false,
@@ -96,7 +96,7 @@ local blocks = {
 	-- WiFi block (shows SSID name, "Disconnected", or "Off")
 	-- Requires NetworkManager (nmcli)
 	oxwm.bar.block.wifi({
-		format = "WIFI {} | ",
+		format = "WIFI {} ",
 		interval = 10,
 		color = colors.cyan,
 		underline = false,
