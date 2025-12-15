@@ -5,11 +5,15 @@ mod battery;
 mod datetime;
 mod ram;
 mod shell;
+mod wifi;
+mod volume;
 
 use battery::Battery;
 use datetime::DateTime;
 use ram::Ram;
 use shell::ShellBlock;
+use wifi::Wifi;
+use volume::Volume;
 
 pub trait Block {
     fn content(&mut self) -> Result<String, BlockError>;
@@ -38,6 +42,8 @@ pub enum BlockCommand {
     },
     Ram,
     Static(String),
+    Wifi,
+    Volume,
 }
 
 impl BlockConfig {
@@ -73,6 +79,8 @@ impl BlockConfig {
                 &format!("{}{}", self.format, text),
                 self.color,
             )),
+            BlockCommand::Wifi => Box::new(Wifi::new(&self.format, self.interval_secs, self.color)),
+            BlockCommand::Volume => Box::new(Volume::new(&self.format, self.interval_secs, self.color)),
         }
     }
 }

@@ -479,11 +479,21 @@ fn register_bar_module(
         create_block_config(lua, config, "Battery", Some(Value::Table(formats_table)))
     })?;
 
+    let wifi = lua.create_function(|lua, config: Table| {
+        create_block_config(lua, config, "Wifi", None)
+    })?;
+
+    let volume = lua.create_function(|lua, config: Table| {
+        create_block_config(lua, config, "Volume", None)
+    })?;
+
     block_table.set("ram", ram)?;
     block_table.set("datetime", datetime)?;
     block_table.set("shell", shell)?;
     block_table.set("static", static_block)?;
     block_table.set("battery", battery)?;
+    block_table.set("wifi", wifi)?;
+    block_table.set("volume", volume)?;
 
     // Deprecated add_block() function for backwards compatibility
     // This allows old configs to still work, but users should migrate to set_blocks()
@@ -622,6 +632,8 @@ fn register_bar_module(
                         battery_name,
                     }
                 }
+                "Wifi" => BlockCommand::Wifi,
+                "Volume" => BlockCommand::Volume,
                 _ => {
                     return Err(mlua::Error::RuntimeError(format!(
                         "Unknown block type '{}'",
