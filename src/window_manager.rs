@@ -2880,6 +2880,15 @@ impl WindowManager {
                 if event.mode != x11rb::protocol::xproto::NotifyMode::NORMAL {
                     return Ok(Control::Continue);
                 }
+                let selected_window = self
+                    .monitors
+                    .get(self.selected_monitor)
+                    .and_then(|m| m.selected_client);
+                if let Some(sel) = selected_window
+                    && self.fullscreen_windows.contains(&sel)
+                {
+                    return Ok(Control::Continue);
+                }
                 if self.windows.contains(&event.event) {
                     if let Some(client) = self.clients.get(&event.event)
                         && client.monitor_index != self.selected_monitor
@@ -2893,6 +2902,16 @@ impl WindowManager {
             }
             Event::MotionNotify(event) => {
                 if event.event != self.root {
+                    return Ok(Control::Continue);
+                }
+
+                let selected_window = self
+                    .monitors
+                    .get(self.selected_monitor)
+                    .and_then(|m| m.selected_client);
+                if let Some(sel) = selected_window
+                    && self.fullscreen_windows.contains(&sel)
+                {
                     return Ok(Control::Continue);
                 }
 
