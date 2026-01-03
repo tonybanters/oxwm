@@ -1,4 +1,5 @@
 pub mod grid;
+pub mod horizon;
 pub mod monocle;
 pub mod normie;
 pub mod tabbed;
@@ -23,6 +24,7 @@ pub enum LayoutType {
     Grid,
     Monocle,
     Tabbed,
+    Horizon,
 }
 
 impl LayoutType {
@@ -33,6 +35,7 @@ impl LayoutType {
             Self::Grid => Box::new(grid::GridLayout),
             Self::Monocle => Box::new(monocle::MonocleLayout),
             Self::Tabbed => Box::new(tabbed::TabbedLayout),
+            Self::Horizon => Box::new(horizon::HorizonLayout),
         }
     }
 
@@ -42,7 +45,8 @@ impl LayoutType {
             Self::Normie => Self::Grid,
             Self::Grid => Self::Monocle,
             Self::Monocle => Self::Tabbed,
-            Self::Tabbed => Self::Tiling,
+            Self::Tabbed => Self::Horizon,
+            Self::Horizon => Self::Tiling,
         }
     }
 
@@ -53,6 +57,7 @@ impl LayoutType {
             Self::Grid => "grid",
             Self::Monocle => "monocle",
             Self::Tabbed => "tabbed",
+            Self::Horizon => "horizon",
         }
     }
 }
@@ -67,6 +72,7 @@ impl FromStr for LayoutType {
             "grid" => Ok(Self::Grid),
             "monocle" => Ok(Self::Monocle),
             "tabbed" => Ok(Self::Tabbed),
+            "horizon" => Ok(Self::Horizon),
             _ => Err(format!("Invalid Layout Type: {}", s)),
         }
     }

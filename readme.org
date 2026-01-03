@@ -281,6 +281,7 @@ Default keybindings (fully customizable in =~/.config/oxwm/config.lua=):
   - Monocle (fullscreen stacking)
   - Grid (equal-sized grid)
   - Tabbed (tabbed windows)
+  - Horizon (master/stack rows)
 - *Lua Configuration System*
   - Hot reload without restarting X (=Mod+Shift+R=)
   - LSP support with type definitions and autocomplete
@@ -397,6 +398,7 @@ src/
 ├── layout/
 │   ├── mod.rs                           [Layout trait definition]
 │   ├── tiling.rs                        [Tiling layout with master/stack]
+│   ├── horizon.rs                       [Tiling layout with master/stack rows]
 │   ├── monocle.rs                       [Fullscreen stacking layout]
 │   ├── grid.rs                          [Equal-sized grid layout]
 │   ├── tabbed.rs                        [Tabbed container layout]

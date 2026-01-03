@@ -106,7 +106,8 @@ oxwm.set_tags(tags)
 -- Layouts
 -------------------------------------------------------------------------------
 -- Set custom symbols for layouts (displayed in the status bar)
--- Available layouts: "tiling", "normie" (floating), "grid", "monocle", "tabbed"
+-- Available layouts: 
+--   "tiling", "normie" (floating), "grid", "monocle", "tabbed", "horizon"
 oxwm.set_layout_symbol("tiling", "[T]")
 oxwm.set_layout_symbol("normie", "[F]")
 oxwm.set_layout_symbol("tabbed", "[=]")

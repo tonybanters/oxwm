@@ -42,7 +42,7 @@ function oxwm.set_tags(tags) end
 function oxwm.auto_tile(enabled) end
 
 ---Set layout symbol override
----@param name string Layout name (e.g., "tiling", "normie", "tabbed", "grid", "monocle")
+---@param name string Layout name (e.g., "tiling", "normie", "tabbed", "grid", "monocle", "horizon")
 ---@param symbol string Symbol to display (e.g., "[T]", "[F]", "[=]")
 function oxwm.set_layout_symbol(name, symbol) end
 
@@ -192,7 +192,7 @@ oxwm.layout = {}
 function oxwm.layout.cycle() end
 
 ---Set specific layout
----@param name string Layout name (e.g., "tiling", "normie", "tabbed", "grid", "monocle")
+---@param name string Layout name (e.g., "tiling", "normie", "tabbed", "grid", "monocle", "horizon")
 ---@return table Action table for keybinding
 function oxwm.layout.set(name) end
 
