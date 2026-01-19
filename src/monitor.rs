@@ -124,6 +124,17 @@ impl Monitor {
     pub fn get_selected_tag(&self) -> TagMask {
         self.tagset[self.selected_tags_index]
     }
+
+    pub fn update_dimensions(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        self.screen_x = x;
+        self.screen_y = y;
+        self.screen_width = width;
+        self.screen_height = height;
+        self.window_area_x = x;
+        self.window_area_y = y;
+        self.window_area_width = width;
+        self.window_area_height = height;
+    }
 }
 
 pub fn detect_monitors(

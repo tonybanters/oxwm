@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 use x11rb::connection::Connection;
 use x11rb::protocol::Event;
+use x11rb::protocol::randr::{ConnectionExt as RandrConnectionExt, NotifyMask};
 use x11rb::protocol::xproto::*;
 use x11rb::rust_connection::RustConnection;
 
@@ -238,6 +239,13 @@ impl WindowManager {
         let mut monitors = detect_monitors(&connection, &screen, root)?;
         for monitor in monitors.iter_mut() {
             monitor.init_pertag(config.tags.len(), "tiling");
+        }
+
+        // Subscribe to RandR screen change events
+        if let Ok(randr_version) = connection.randr_query_version(1, 5) {
+            if randr_version.reply().is_ok() {
+                let _ = connection.randr_select_input(root, NotifyMask::SCREEN_CHANGE);
+            }
         }
 
         let display = unsafe { x11::xlib::XOpenDisplay(std::ptr::null()) };
@@ -1360,6 +1368,37 @@ impl WindowManager {
         }
 
         best_monitor
+    }
+
+    fn update_monitors(&mut self) -> WmResult<()> {
+        // For single-monitor setups, use the screen dimensions directly
+        // as they are updated from the RandR event
+        if self.monitors.len() == 1 {
+            if let Some(monitor) = self.monitors.get_mut(0) {
+                monitor.update_dimensions(
+                    0,
+                    0,
+                    self.screen.width_in_pixels as i32,
+                    self.screen.height_in_pixels as i32,
+                );
+            }
+            return Ok(());
+        }
+
+        // For multi-monitor setups, try to detect via Xinerama
+        let new_monitors = detect_monitors(&self.connection, &self.screen, self.root)?;
+        for (i, new_mon) in new_monitors.iter().enumerate() {
+            if let Some(existing_mon) = self.monitors.get_mut(i) {
+                existing_mon.update_dimensions(
+                    new_mon.screen_x,
+                    new_mon.screen_y,
+                    new_mon.screen_width,
+                    new_mon.screen_height,
+                );
+            }
+        }
+
+        Ok(())
     }
 
     fn move_window_to_monitor(
@@ -3847,7 +3886,10 @@ impl WindowManager {
                     let old_height = self.screen.height_in_pixels;
 
                     if event.width != old_width || event.height != old_height {
-                        self.screen = self.connection.setup().roots[self.screen_number].clone();
+                        self.screen.width_in_pixels = event.width;
+                        self.screen.height_in_pixels = event.height;
+
+                        self.update_monitors()?;
 
                         for monitor_index in 0..self.monitors.len() {
                             let monitor = &self.monitors[monitor_index];
@@ -3883,6 +3925,45 @@ impl WindowManager {
                         self.apply_layout()?;
                     }
                 }
+            }
+            Event::RandrScreenChangeNotify(event) => {
+                self.screen.width_in_pixels = event.width;
+                self.screen.height_in_pixels = event.height;
+
+                self.update_monitors()?;
+
+                for monitor_index in 0..self.monitors.len() {
+                    let monitor = &self.monitors[monitor_index];
+                    let monitor_x = monitor.screen_x;
+                    let monitor_y = monitor.screen_y;
+                    let monitor_width = monitor.screen_width as u32;
+                    let monitor_height = monitor.screen_height as u32;
+
+                    let fullscreen_on_monitor: Vec<Window> = self
+                        .fullscreen_windows
+                        .iter()
+                        .filter(|&&window| {
+                            self.clients
+                                .get(&window)
+                                .map(|client| client.monitor_index == monitor_index)
+                                .unwrap_or(false)
+                        })
+                        .copied()
+                        .collect();
+
+                    for window in fullscreen_on_monitor {
+                        self.connection.configure_window(
+                            window,
+                            &ConfigureWindowAux::new()
+                                .x(monitor_x)
+                                .y(monitor_y)
+                                .width(monitor_width)
+                                .height(monitor_height),
+                        )?;
+                    }
+                }
+
+                self.apply_layout()?;
             }
             _ => {}
         }

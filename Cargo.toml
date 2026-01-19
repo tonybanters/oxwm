@@ -13,7 +13,7 @@ path = "src/bin/main.rs"
 
 [dependencies]
 x11 = { version = "2.21", features = ["xlib", "xft"] }
-x11rb = { version = "0.13", features = ["cursor", "xinerama"] }
+x11rb = { version = "0.13", features = ["cursor", "xinerama", "randr"] }
 chrono = "0.4"
 dirs = "5.0"
 serde = { version = "1.0", features = ["derive"] }
