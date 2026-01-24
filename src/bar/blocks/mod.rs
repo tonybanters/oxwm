@@ -4,12 +4,16 @@ use std::time::Duration;
 mod battery;
 mod datetime;
 mod ram;
+mod cpu;
 mod shell;
+mod volume;
 
 use battery::Battery;
 use datetime::DateTime;
 use ram::Ram;
+use cpu::Cpu;
 use shell::ShellBlock;
+use volume::Volume;
 
 pub trait Block {
     fn content(&mut self) -> Result<String, BlockError>;
@@ -37,7 +41,9 @@ pub enum BlockCommand {
         battery_name: Option<String>,
     },
     Ram,
+    Cpu,
     Static(String),
+    Volume,
 }
 
 impl BlockConfig {
@@ -69,13 +75,16 @@ impl BlockConfig {
                 battery_name.clone(),
             )),
             BlockCommand::Ram => Box::new(Ram::new(&self.format, self.interval_secs, self.color)),
+            BlockCommand::Cpu => Box::new(Cpu::new(&self.format, self.interval_secs, self.color)),
             BlockCommand::Static(text) => Box::new(StaticBlock::new(
                 &format!("{}{}", self.format, text),
                 self.color,
             )),
+            BlockCommand::Volume => Box::new(Volume::new(&self.format, self.interval_secs, self.color)),
         }
     }
 }
+
 
 struct StaticBlock {
     text: String,

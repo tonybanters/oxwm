@@ -74,3 +74,4 @@ impl Default for ScrollAnimation {
         Self::new()
     }
 }
+

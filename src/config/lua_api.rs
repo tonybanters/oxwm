@@ -446,10 +446,15 @@ fn register_bar_module(
 
     let block_table = lua.create_table()?;
 
+    let cpu = lua.create_function(|lua, config: Table| {
+    create_block_config(lua, config, "Cpu", None)
+})?;
     let ram =
         lua.create_function(|lua, config: Table| create_block_config(lua, config, "Ram", None))?;
 
-    let datetime = lua.create_function(|lua, config: Table| {
+
+
+        let datetime = lua.create_function(|lua, config: Table| {
         let date_format: String = config.get("date_format").map_err(|_| {
             mlua::Error::RuntimeError(
                 "oxwm.bar.block.datetime: 'date_format' field is required (e.g., '%H:%M')".into(),
@@ -510,11 +515,18 @@ fn register_bar_module(
         create_block_config(lua, config, "Battery", Some(Value::Table(formats_table)))
     })?;
 
+        let volume = lua.create_function(|lua, config: Table| {
+        create_block_config(lua, config, "Volume", None)
+    })?;
+
+    block_table.set("cpu", cpu)?;
     block_table.set("ram", ram)?;
     block_table.set("datetime", datetime)?;
     block_table.set("shell", shell)?;
     block_table.set("static", static_block)?;
     block_table.set("battery", battery)?;
+    block_table.set("volume", volume)?;
+
 
     // Deprecated add_block() function for backwards compatibility
     // This allows old configs to still work, but users should migrate to set_blocks()
@@ -549,6 +561,7 @@ fn register_bar_module(
                 };
                 crate::bar::BlockCommand::Static(text)
             }
+            "Cpu" => crate::bar::BlockCommand::Cpu,
             "Battery" => {
                 return Err(mlua::Error::RuntimeError(
                     "Battery block is not supported with add_block(). Please use oxwm.bar.set_blocks() with oxwm.bar.block.battery()".into()
@@ -653,6 +666,9 @@ fn register_bar_module(
                         battery_name,
                     }
                 }
+
+                "Volume" => BlockCommand::Volume,
+                "Cpu" => BlockCommand::Cpu,
                 _ => {
                     return Err(mlua::Error::RuntimeError(format!(
                         "Unknown block type '{}'",

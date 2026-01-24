@@ -196,3 +196,4 @@ pub fn detect_monitors(
 
     Ok(monitors)
 }
+

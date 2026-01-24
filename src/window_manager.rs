@@ -10,6 +10,7 @@ use crate::layout::{Layout, LayoutBox, LayoutType, layout_from_str, next_layout}
 use crate::monitor::{Monitor, detect_monitors};
 use crate::overlay::{ErrorOverlay, KeybindOverlay, Overlay};
 use std::collections::{HashMap, HashSet};
+use std::time::{Instant};
 
 use x11rb::connection::Connection;
 use x11rb::protocol::Event;
@@ -2870,162 +2871,116 @@ impl WindowManager {
         Ok(())
     }
 
-    fn drag_window(&mut self, window: Window) -> WmResult<()> {
-        let is_fullscreen = self
-            .clients
-            .get(&window)
-            .map(|c| c.is_fullscreen)
-            .unwrap_or(false);
+   pub fn drag_window(&mut self, window: Window) -> WmResult<()> {
+    let Some(client) = self.clients.get(&window) else { return Ok(()); };
+    if client.is_fullscreen { return Ok(()); }
 
-        if is_fullscreen {
-            return Ok(());
-        }
+    let (orig_x, orig_y, width, height, was_floating, monitor_idx) =
+        (client.x_position, client.y_position, client.width, client.height, client.is_floating, client.monitor_index);
 
-        let client_info = self.clients.get(&window).map(|c| {
-            (
-                c.x_position,
-                c.y_position,
-                c.width,
-                c.height,
-                c.is_floating,
-                c.monitor_index,
-            )
-        });
+    let Some(monitor) = self.monitors.get(monitor_idx).cloned() else { return Ok(()); };
 
-        let Some((orig_x, orig_y, width, height, was_floating, monitor_idx)) = client_info else {
-            return Ok(());
-        };
+    let snap = 32;
+    let is_normie = self.layout.name() == "normie";
 
-        let monitor = self.monitors.get(monitor_idx).cloned();
-        let Some(monitor) = monitor else {
-            return Ok(());
-        };
-
-        let snap = 32;
-        let is_normie = self.layout.name() == "normie";
-
-        if !was_floating && !is_normie {
-            self.toggle_floating()?;
-        }
-
-        self.connection
-            .grab_pointer(
-                false,
-                self.root,
-                EventMask::POINTER_MOTION | EventMask::BUTTON_RELEASE | EventMask::BUTTON_PRESS,
-                GrabMode::ASYNC,
-                GrabMode::ASYNC,
-                x11rb::NONE,
-                x11rb::NONE,
-                x11rb::CURRENT_TIME,
-            )?
-            .reply()?;
-
-        let pointer = self.connection.query_pointer(self.root)?.reply()?;
-        let (start_x, start_y) = (pointer.root_x as i32, pointer.root_y as i32);
-
-        let mut last_time = 0u32;
-
-        loop {
-            let event = self.connection.wait_for_event()?;
-            match event {
-                Event::ConfigureRequest(_) | Event::MapRequest(_) | Event::Expose(_) => {}
-                Event::MotionNotify(e) => {
-                    if e.time.wrapping_sub(last_time) <= 16 {
-                        continue;
-                    }
-                    last_time = e.time;
-
-                    let mut new_x = orig_x as i32 + (e.root_x as i32 - start_x);
-                    let mut new_y = orig_y as i32 + (e.root_y as i32 - start_y);
-
-                    if (monitor.window_area_x - new_x).abs() < snap {
-                        new_x = monitor.window_area_x;
-                    } else if ((monitor.window_area_x + monitor.window_area_width)
-                        - (new_x + width as i32))
-                        .abs()
-                        < snap
-                    {
-                        new_x = monitor.window_area_x + monitor.window_area_width - width as i32;
-                    }
-
-                    if (monitor.window_area_y - new_y).abs() < snap {
-                        new_y = monitor.window_area_y;
-                    } else if ((monitor.window_area_y + monitor.window_area_height)
-                        - (new_y + height as i32))
-                        .abs()
-                        < snap
-                    {
-                        new_y = monitor.window_area_y + monitor.window_area_height - height as i32;
-                    }
-
-                    let should_resize = is_normie
-                        || self
-                            .clients
-                            .get(&window)
-                            .map(|c| c.is_floating)
-                            .unwrap_or(false);
-
-                    if should_resize {
-                        if let Some(client) = self.clients.get_mut(&window) {
-                            client.x_position = new_x as i16;
-                            client.y_position = new_y as i16;
-                        }
-
-                        self.connection.configure_window(
-                            window,
-                            &ConfigureWindowAux::new().x(new_x).y(new_y),
-                        )?;
-                        self.connection.flush()?;
-                    }
-                }
-                Event::ButtonRelease(_) => break,
-                _ => {}
-            }
-        }
-
-        self.connection
-            .ungrab_pointer(x11rb::CURRENT_TIME)?
-            .check()?;
-
-        let final_client = self
-            .clients
-            .get(&window)
-            .map(|c| (c.x_position, c.y_position, c.width, c.height));
-
-        if let Some((x, y, w, h)) = final_client {
-            let new_monitor = self.get_monitor_for_rect(x as i32, y as i32, w as i32, h as i32);
-            if new_monitor != monitor_idx {
-                self.move_window_to_monitor(window, new_monitor)?;
-                self.selected_monitor = new_monitor;
-                self.focus(None)?;
-            }
-        }
-
-        if self.config.auto_tile && !was_floating && !is_normie {
-            let drop_monitor_idx = self
-                .clients
-                .get(&window)
-                .map(|c| c.monitor_index)
-                .unwrap_or(monitor_idx);
-
-            if let Some((x, y, w, h)) = final_client {
-                let center = (x as i32 + w as i32 / 2, y as i32 + h as i32 / 2);
-                if let Some(target) = self.tiled_window_at(window, drop_monitor_idx, center) {
-                    self.detach(window);
-                    self.insert_before(window, target, drop_monitor_idx);
-                }
-            }
-
-            self.floating_windows.remove(&window);
-            if let Some(client) = self.clients.get_mut(&window) {
-                client.is_floating = false;
-            }
-            self.apply_layout()?;
-        }
-
-        Ok(())
+    // If it’s not floating yet, make it floating for drag
+    if !was_floating && !is_normie {
+        self.toggle_floating()?;
     }
+
+    self.connection.grab_pointer(
+        false,
+        self.root,
+        EventMask::POINTER_MOTION | EventMask::BUTTON_RELEASE,
+        GrabMode::ASYNC,
+        GrabMode::ASYNC,
+        x11rb::NONE,
+        x11rb::NONE,
+        x11rb::CURRENT_TIME,
+    )?.reply()?;
+
+    let pointer = self.connection.query_pointer(self.root)?.reply()?;
+    let (start_x, start_y) = (pointer.root_x as i32, pointer.root_y as i32);
+
+    let mut last_update = Instant::now();
+
+    loop {
+        let event = self.connection.wait_for_event()?;
+        match event {
+            Event::MotionNotify(e) => {
+                // throttle to ~60fps
+                if last_update.elapsed() < std::time::Duration::from_millis(16) { continue; }
+                last_update = Instant::now();
+
+                let mut new_x = orig_x as i32 + (e.root_x as i32 - start_x);
+                let mut new_y = orig_y as i32 + (e.root_y as i32 - start_y);
+
+                // Snap to monitor edges
+                if (monitor.window_area_x - new_x).abs() < snap { new_x = monitor.window_area_x; }
+                else if ((monitor.window_area_x + monitor.window_area_width) - (new_x + width as i32)).abs() < snap {
+                    new_x = monitor.window_area_x + monitor.window_area_width - width as i32;
+                }
+
+                if (monitor.window_area_y - new_y).abs() < snap { new_y = monitor.window_area_y; }
+                else if ((monitor.window_area_y + monitor.window_area_height) - (new_y + height as i32)).abs() < snap {
+                    new_y = monitor.window_area_y + monitor.window_area_height - height as i32;
+                }
+
+                // Only move floating windows
+                if is_normie || was_floating {
+                    if let Some(client) = self.clients.get_mut(&window) {
+                        client.x_position = new_x as i16;
+                        client.y_position = new_y as i16;
+                    }
+
+                    // Only configure position; no restacking
+                    self.connection.configure_window(
+                        window,
+                        &ConfigureWindowAux::new().x(new_x).y(new_y),
+                    )?;
+                }
+            }
+
+            Event::ButtonRelease(_) => break,
+            _ => {}
+        }
+    }
+
+    self.connection.ungrab_pointer(x11rb::CURRENT_TIME)?.check()?;
+
+    // Move window to new monitor if needed
+    if let Some((x, y, w, h)) = self.clients.get(&window).map(|c| (c.x_position, c.y_position, c.width, c.height)) {
+        let new_monitor_idx = self.get_monitor_for_rect(x as i32, y as i32, w as i32, h as i32);
+        if new_monitor_idx != monitor_idx {
+            self.move_window_to_monitor(window, new_monitor_idx)?;
+            self.selected_monitor = new_monitor_idx;
+            self.focus(None)?;
+        }
+    }
+
+    // Auto-tile logic for dropped floating windows
+    if self.config.auto_tile && !was_floating && !is_normie {
+        if let Some((x, y, w, h)) = self.clients.get(&window).map(|c| (c.x_position, c.y_position, c.width, c.height)) {
+            let center = (x as i32 + w as i32 / 2, y as i32 + h as i32 / 2);
+            let drop_monitor_idx = self.clients.get(&window).map(|c| c.monitor_index).unwrap_or(monitor_idx);
+
+            if let Some(target) = self.tiled_window_at(window, drop_monitor_idx, center) {
+                self.detach(window);
+                self.insert_before(window, target, drop_monitor_idx);
+            }
+        }
+
+        self.floating_windows.remove(&window);
+        if let Some(client) = self.clients.get_mut(&window) {
+            client.is_floating = false;
+        }
+
+        self.apply_layout()?;
+    }
+
+    Ok(())
+}
+
 
     fn tiled_window_at(
         &self,
