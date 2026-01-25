@@ -69,6 +69,7 @@ pub const XK_EQUAL: Keysym = 0x003d;
 pub const XK_LEFT_BRACKET: Keysym = 0x005b;
 pub const XK_RIGHT_BRACKET: Keysym = 0x005d;
 pub const XK_SEMICOLON: Keysym = 0x003b;
+pub const XK_QUESTION: Keysym = 0x003f;
 pub const XK_APOSTROPHE: Keysym = 0x0027;
 pub const XK_GRAVE: Keysym = 0x0060;
 pub const XK_BACKSLASH: Keysym = 0x005c;
@@ -216,6 +217,7 @@ pub fn keysym_from_str(s: &str) -> Option<Keysym> {
         "BracketLeft" => Some(XK_LEFT_BRACKET),
         "BracketRight" => Some(XK_RIGHT_BRACKET),
         "Semicolon" => Some(XK_SEMICOLON),
+        "Question" => Some(XK_QUESTION),
         "Apostrophe" => Some(XK_APOSTROPHE),
         "Grave" => Some(XK_GRAVE),
         "Backslash" => Some(XK_BACKSLASH),
@@ -334,6 +336,7 @@ pub fn format_keysym(keysym: Keysym) -> String {
         XK_LEFT_BRACKET => "[".to_string(),
         XK_RIGHT_BRACKET => "]".to_string(),
         XK_SEMICOLON => ";".to_string(),
+        XK_QUESTION => "?".to_string(),
         XK_APOSTROPHE => "'".to_string(),
         XK_BACKSLASH => "\\".to_string(),
         XK_PRINT => "Print".to_string(),
