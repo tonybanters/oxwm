@@ -99,6 +99,9 @@ pub const Block = struct {
     format_discharging: ?[]const u8 = null,
     format_full: ?[]const u8 = null,
     battery_name: ?[]const u8 = null,
+    color_charging: ?u32 = null,
+    color_discharging: ?u32 = null,
+    color_full: ?u32 = null,
     thermal_zone: ?[]const u8 = null,
 };
 

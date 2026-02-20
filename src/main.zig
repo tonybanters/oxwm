@@ -378,6 +378,9 @@ fn config_block_to_bar_block(cfg: config_mod.Block) blocks_mod.Block {
             cfg.battery_name orelse "BAT0",
             cfg.interval,
             cfg.color,
+            if (cfg.color_charging) |c| @as(c_ulong, c) else null,
+            if (cfg.color_discharging) |c| @as(c_ulong, c) else null,
+            if (cfg.color_full) |c| @as(c_ulong, c) else null,
             cfg.underline,
         ),
         .cpu_temp => blocks_mod.Block.init_cpu_temp(
