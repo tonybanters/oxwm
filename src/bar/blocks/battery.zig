@@ -8,6 +8,10 @@ pub const Battery = struct {
     battery_name: []const u8,
     interval_secs: u64,
     color: c_ulong,
+    color_charging: ?c_ulong,
+    color_discharging: ?c_ulong,
+    color_full: ?c_ulong,
+    current_status: ?Status = null,
 
     pub fn init(
         format_charging: []const u8,
@@ -16,6 +20,9 @@ pub const Battery = struct {
         battery_name: []const u8,
         interval_secs: u64,
         color: c_ulong,
+        color_charging: ?c_ulong,
+        color_discharging: ?c_ulong,
+        color_full: ?c_ulong,
     ) Battery {
         return .{
             .format_charging = format_charging,
@@ -24,6 +31,9 @@ pub const Battery = struct {
             .battery_name = if (battery_name.len > 0) battery_name else "BAT0",
             .interval_secs = interval_secs,
             .color = color,
+            .color_charging = color_charging,
+            .color_discharging = color_discharging,
+            .color_full = color_full,
         };
     }
 
@@ -32,6 +42,8 @@ pub const Battery = struct {
 
         const capacity = self.read_battery_file(&path_buf, "capacity") orelse return buffer[0..0];
         const status = self.read_battery_status(&path_buf) orelse return buffer[0..0];
+        
+        self.current_status = status;
 
         const format = switch (status) {
             .charging => self.format_charging,
@@ -82,6 +94,13 @@ pub const Battery = struct {
     }
 
     pub fn get_color(self: *Battery) c_ulong {
+        if (self.current_status) |status| {
+            return switch (status) {
+                .charging => self.color_charging orelse self.color,
+                .discharging => self.color_discharging orelse self.color,
+                .full => self.color_full orelse self.color,
+            };
+        }
         return self.color;
     }
 };

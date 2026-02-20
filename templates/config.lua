@@ -91,6 +91,9 @@ local blocks = {
         full = "✓ Bat: {}%",
         interval = 30,
         color = colors.green,
+        color_charging = colors.cyan,
+        color_discharging = colors.red,
+        color_full = colors.green,
         underline = true,
     }),
 };

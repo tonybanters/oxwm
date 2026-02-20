@@ -73,10 +73,13 @@ pub const Block = struct {
         battery_name: []const u8,
         interval_secs: u64,
         col: c_ulong,
+        color_charging: ?c_ulong,
+        color_discharging: ?c_ulong,
+        color_full: ?c_ulong,
         ul: bool,
     ) Block {
         return .{
-            .data = .{ .battery = Battery.init(format_charging, format_discharging, format_full, battery_name, interval_secs, col) },
+            .data = .{ .battery = Battery.init(format_charging, format_discharging, format_full, battery_name, interval_secs, col, color_charging, color_discharging, color_full) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,

@@ -852,6 +852,24 @@ fn parse_block_config(state: *c.lua_State, idx: c_int) ?Block {
             _ = c.lua_getfield(state, -1, "battery_name");
             block.battery_name = dupe_lua_string(state, -1);
             c.lua_settop(state, -2);
+
+            _ = c.lua_getfield(state, -1, "color_charging");
+            if (c.lua_type(state, -1) != c.LUA_TNIL) {
+                block.color_charging = parse_color(state, -1);
+            }
+            c.lua_settop(state, -2);
+
+            _ = c.lua_getfield(state, -1, "color_discharging");
+            if (c.lua_type(state, -1) != c.LUA_TNIL) {
+                block.color_discharging = parse_color(state, -1);
+            }
+            c.lua_settop(state, -2);
+
+            _ = c.lua_getfield(state, -1, "color_full");
+            if (c.lua_type(state, -1) != c.LUA_TNIL) {
+                block.color_full = parse_color(state, -1);
+            }
+            c.lua_settop(state, -2);
         }
         c.lua_settop(state, -2);
     } else {
@@ -949,7 +967,7 @@ fn lua_bar_block_battery(state: ?*c.lua_State) callconv(.c) c_int {
     _ = c.lua_getfield(s, 1, "underline");
     c.lua_setfield(s, -2, "underline");
 
-    c.lua_createtable(s, 0, 4);
+    c.lua_createtable(s, 0, 7);
     _ = c.lua_getfield(s, 1, "charging");
     c.lua_setfield(s, -2, "charging");
     _ = c.lua_getfield(s, 1, "discharging");
@@ -958,6 +976,12 @@ fn lua_bar_block_battery(state: ?*c.lua_State) callconv(.c) c_int {
     c.lua_setfield(s, -2, "full");
     _ = c.lua_getfield(s, 1, "battery_name");
     c.lua_setfield(s, -2, "battery_name");
+    _ = c.lua_getfield(s, 1, "color_charging");
+    c.lua_setfield(s, -2, "color_charging");
+    _ = c.lua_getfield(s, 1, "color_discharging");
+    c.lua_setfield(s, -2, "color_discharging");
+    _ = c.lua_getfield(s, 1, "color_full");
+    c.lua_setfield(s, -2, "color_full");
     c.lua_setfield(s, -2, "__arg");
 
     return 1;
