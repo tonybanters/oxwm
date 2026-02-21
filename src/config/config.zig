@@ -115,6 +115,7 @@ pub const Config = struct {
     terminal: []const u8 = "st",
     font: []const u8 = "monospace:size=10",
     tags: [9][]const u8 = .{ "1", "2", "3", "4", "5", "6", "7", "8", "9" },
+    tag_count: u8 = 9,
 
     border_width: i32 = 2,
     border_focused: u32 = 0x6dade3,
@@ -136,6 +137,7 @@ pub const Config = struct {
     layout_monocle_symbol: []const u8 = "[M]",
     layout_floating_symbol: []const u8 = "><>",
     layout_scrolling_symbol: []const u8 = "[S]",
+    layout_grid_symbol: []const u8 = "[#]",
 
     scheme_normal: ColorScheme = .{ .foreground = 0xbbbbbb, .background = 0x1a1b26, .border = 0x444444 },
     scheme_selected: ColorScheme = .{ .foreground = 0x0db9d7, .background = 0x1a1b26, .border = 0xad8ee6 },

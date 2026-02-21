@@ -41,15 +41,6 @@ var net_client_list: xlib.Atom = 0;
 
 var wm_check_window: xlib.Window = 0;
 
-var border_color_focused: c_ulong = 0x6dade3;
-var border_color_unfocused: c_ulong = 0x444444;
-var border_width: i32 = 2;
-var gap_outer_v: i32 = 5;
-var gap_outer_h: i32 = 5;
-var gap_inner_h: i32 = 5;
-var gap_inner_v: i32 = 5;
-
-var tags: [9][]const u8 = .{ "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 var cursor_normal: xlib.Cursor = 0;
 var cursor_resize: xlib.Cursor = 0;
@@ -226,7 +217,6 @@ pub fn main() !void {
         if (loaded) {
             config_path_global = config_path;
             std.debug.print("loaded config from {s}\n", .{config_path});
-            apply_config_values();
         } else {
             std.debug.print("no config found, using defaults\n", .{});
             initialize_default_config();
@@ -476,17 +466,6 @@ fn setup_monitors(display: *Display) void {
     std.debug.print("monitor created: {d}x{d}\n", .{ mon.mon_w, mon.mon_h });
 }
 
-fn apply_config_values() void {
-    border_color_focused = config.border_focused;
-    border_color_unfocused = config.border_unfocused;
-    border_width = config.border_width;
-    gap_inner_h = config.gap_inner_h;
-    gap_inner_v = config.gap_inner_v;
-    gap_outer_h = config.gap_outer_h;
-    gap_outer_v = config.gap_outer_v;
-    tags = config.tags;
-}
-
 fn init_monitor_gaps(mon: *Monitor) void {
     const any_gap_nonzero = config.gap_inner_h != 0 or config.gap_inner_v != 0 or
                             config.gap_outer_h != 0 or config.gap_outer_v != 0;
@@ -711,7 +690,7 @@ fn run_event_loop(display: *Display) void {
         var current_bar = bar_mod.bars;
         while (current_bar) |bar| {
             bar.update_blocks();
-            bar.draw(display.handle, &tags);
+            bar.draw(display.handle, config.tags[0..config.tag_count]);
             current_bar = bar.next;
         }
 
@@ -774,7 +753,7 @@ fn manage(display: *Display, win: xlib.Window, window_attrs: *xlib.XWindowAttrib
     client.old_width = window_attrs.width;
     client.old_height = window_attrs.height;
     client.old_border_width = window_attrs.border_width;
-    client.border_width = border_width;
+    client.border_width = config.border_width;
 
     update_title(display, client);
 
@@ -802,7 +781,7 @@ fn manage(display: *Display, win: xlib.Window, window_attrs: *xlib.XWindowAttrib
     client.y = @max(client.y, monitor.win_y);
 
     _ = xlib.XSetWindowBorderWidth(display.handle, win, @intCast(client.border_width));
-    _ = xlib.XSetWindowBorder(display.handle, win, border_color_unfocused);
+    _ = xlib.XSetWindowBorder(display.handle, win, config.border_unfocused);
     tiling.send_configure(client);
 
     update_window_type(display, client);
@@ -1084,7 +1063,6 @@ fn reload_config(display: *Display) void {
         } else {
             std.debug.print("reloaded config from ~/.config/oxwm/config.lua\n", .{});
         }
-        apply_config_values();
     } else {
         std.debug.print("reload failed, restoring defaults\n", .{});
         initialize_default_config();
@@ -1276,10 +1254,10 @@ fn toggle_client_tag(display: *Display, tag_mask: u32) void {
 fn toggle_gaps() void {
     const monitor = monitor_mod.selected_monitor orelse return;
     if (monitor.gap_inner_h == 0) {
-        monitor.gap_inner_h = gap_inner_v;
-        monitor.gap_inner_v = gap_inner_v;
-        monitor.gap_outer_h = gap_outer_h;
-        monitor.gap_outer_v = gap_outer_v;
+        monitor.gap_inner_h = config.gap_inner_h;
+        monitor.gap_inner_v = config.gap_inner_v;
+        monitor.gap_outer_h = config.gap_outer_h;
+        monitor.gap_outer_v = config.gap_outer_v;
     } else {
         monitor.gap_inner_h = 0;
         monitor.gap_inner_v = 0;
@@ -1860,7 +1838,7 @@ fn handle_expose(display: *Display, event: *xlib.XExposeEvent) void {
 
     if (bar_mod.window_to_bar(event.window)) |bar| {
         bar.invalidate();
-        bar.draw(display.handle, &tags);
+        bar.draw(display.handle, config.tags[0..config.tag_count]);
     }
 }
 
@@ -1891,7 +1869,7 @@ fn handle_button_press(display: *Display, event: *xlib.XButtonEvent) void {
     }
 
     if (bar_mod.window_to_bar(event.window)) |bar| {
-        const clicked_tag = bar.handle_click(event.x, &tags);
+        const clicked_tag = bar.handle_click(event.x, config.tags[0..config.tag_count]);
         if (clicked_tag) |tag_index| {
             const tag_mask: u32 = @as(u32, 1) << @intCast(tag_index);
             view(display, tag_mask);
@@ -2111,7 +2089,7 @@ fn handle_property_notify(display: *Display, event: *xlib.XPropertyEvent) void {
 fn unfocus_client(display: *Display, client: ?*Client, reset_input_focus: bool) void {
     const unfocus_target = client orelse return;
     grabbuttons(display, unfocus_target, false);
-    _ = xlib.XSetWindowBorder(display.handle, unfocus_target.window, border_color_unfocused);
+    _ = xlib.XSetWindowBorder(display.handle, unfocus_target.window, config.border_unfocused);
     if (reset_input_focus) {
         _ = xlib.XSetInputFocus(display.handle, display.root, xlib.RevertToPointerRoot, xlib.CurrentTime);
         _ = xlib.XDeleteProperty(display.handle, display.root, net_active_window);
@@ -2208,7 +2186,7 @@ fn focus(display: *Display, target_client: ?*Client) void {
         client_mod.detach_stack(client);
         client_mod.attach_stack(client);
         grabbuttons(display, client, true);
-        _ = xlib.XSetWindowBorder(display.handle, client.window, border_color_focused);
+        _ = xlib.XSetWindowBorder(display.handle, client.window, config.border_focused);
         if (!client.never_focus) {
             _ = xlib.XSetInputFocus(display.handle, client.window, xlib.RevertToPointerRoot, xlib.CurrentTime);
             _ = xlib.XChangeProperty(display.handle, display.root, net_active_window, xlib.XA_WINDOW, 32, xlib.PropModeReplace, @ptrCast(&client.window), 1);

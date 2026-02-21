@@ -16,8 +16,8 @@ fn get_layout_symbol(layout_index: u32) []const u8 {
             0 => conf.layout_tile_symbol,
             1 => conf.layout_monocle_symbol,
             2 => conf.layout_floating_symbol,
-            3 => "[S]",
-            4 => "[#]",
+            3 => conf.layout_scrolling_symbol,
+            4 => conf.layout_grid_symbol,
             else => "[?]",
         };
     }

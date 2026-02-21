@@ -1029,14 +1029,16 @@ fn lua_set_tags(state: ?*c.lua_State) callconv(.c) c_int {
     if (c.lua_type(s, 1) != c.LUA_TTABLE) return 0;
 
     const len = c.lua_rawlen(s, 1);
+    const count = @min(len, 9);
     var i: usize = 0;
-    while (i < len and i < 9) : (i += 1) {
+    while (i < count) : (i += 1) {
         _ = c.lua_rawgeti(s, 1, @intCast(i + 1));
         if (dupe_lua_string(s, -1)) |tag_str| {
             cfg.tags[i] = tag_str;
         }
         c.lua_settop(s, -2);
     }
+    cfg.tag_count = @intCast(count);
 
     return 0;
 }
@@ -1072,6 +1074,7 @@ fn lua_set_layout_symbol(state: ?*c.lua_State) callconv(.c) c_int {
         .{ "monocle", &cfg.layout_monocle_symbol },
         .{ "scrolling", &cfg.layout_scrolling_symbol },
         .{ "scroll", &cfg.layout_scrolling_symbol },
+        .{ "grid", &cfg.layout_grid_symbol },
     };
 
     inline for (layout_map) |entry| {
