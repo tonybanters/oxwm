@@ -138,6 +138,7 @@ pub const None = c.None;
 pub const XButtonEvent = c.XButtonEvent;
 pub const XMotionEvent = c.XMotionEvent;
 pub const XExposeEvent = c.XExposeEvent;
+pub const XConfigureEvent = c.XConfigureEvent;
 
 pub const XineramaIsActive = c.XineramaIsActive;
 pub const XineramaQueryScreens = c.XineramaQueryScreens;
