@@ -268,3 +268,8 @@ pub const XC_fleur = c.XC_fleur;
 pub const XAllowEvents = c.XAllowEvents;
 pub const ReplayPointer = c.ReplayPointer;
 pub const AnyButton = c.AnyButton;
+
+pub const XMappingEvent = c.XMappingEvent;
+pub const XRefreshKeyboardMapping = c.XRefreshKeyboardMapping;
+pub const MappingKeyboard = c.MappingKeyboard;
+pub const MappingModifier = c.MappingModifier;

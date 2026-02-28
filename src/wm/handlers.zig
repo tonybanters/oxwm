@@ -32,6 +32,7 @@ pub fn handleEvent(event: *xlib.XEvent, wm: *WindowManager) void {
         .button_press => handleButtonPress(&event.xbutton, wm),
         .expose => handleExpose(&event.xexpose, wm),
         .property_notify => handlePropertyNotify(&event.xproperty, wm),
+        .mapping_notify => handleMappingNotify(&event.xmapping, wm),
         else => {},
     }
 }
@@ -358,5 +359,14 @@ fn handlePropertyNotify(event: *xlib.XPropertyEvent, wm: *WindowManager) void {
         core.updateTitle(client, wm);
     } else if (event.atom == wm.atoms.net_wm_window_type) {
         core.updateWindowType(client, wm);
+    }
+}
+
+fn handleMappingNotify(event: *xlib.XMappingEvent, wm: *WindowManager) void {
+    _ = xlib.XRefreshKeyboardMapping(event);
+    
+    if (event.request == xlib.MappingKeyboard or event.request == xlib.MappingModifier) {
+        wm.ungrabKeybinds();
+        wm.grabKeybinds();
     }
 }
