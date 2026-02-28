@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) void {
 
     exe.use_lld = false;
 
-    exe.linkSystemLibrary("lua5.4");
+    linkLua(b, exe);
     exe.linkSystemLibrary("X11");
     exe.linkSystemLibrary("Xinerama");
     exe.linkSystemLibrary("Xft");
@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     src_main_unit_tests.use_lld = false;
-    src_main_unit_tests.linkSystemLibrary("lua5.4");
+    linkLua(b, src_main_unit_tests);
     src_main_unit_tests.linkSystemLibrary("X11");
     src_main_unit_tests.linkSystemLibrary("Xinerama");
     src_main_unit_tests.linkSystemLibrary("Xft");
@@ -81,7 +81,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     }));
-    lua_config_tests.linkSystemLibrary("lua5.4");
+    linkLua(b, lua_config_tests);
     lua_config_tests.linkLibC();
     test_step.dependOn(&b.addRunArtifact(lua_config_tests).step);
 
@@ -156,4 +156,46 @@ fn addXwaylandRun(b: *std.Build, exe: *std.Build.Step.Compile) *std.Build.Step.R
     run_wm.setEnvironmentVariable("DISPLAY", ":2");
 
     return run_wm;
+}
+
+fn linkLua(b: *std.Build, step: *std.Build.Step.Compile) void {
+    step.addCSourceFiles(.{
+        .root = b.path("vendor/lua"),
+        .files = &.{
+            "lapi.c",
+            "lauxlib.c",
+            "lbaselib.c",
+            "lcode.c",
+            "lcorolib.c",
+            "lctype.c",
+            "ldblib.c",
+            "ldebug.c",
+            "ldo.c",
+            "ldump.c",
+            "lfunc.c",
+            "lgc.c",
+            "linit.c",
+            "liolib.c",
+            "llex.c",
+            "lmathlib.c",
+            "lmem.c",
+            "loadlib.c",
+            "lobject.c",
+            "lopcodes.c",
+            "loslib.c",
+            "lparser.c",
+            "lstate.c",
+            "lstring.c",
+            "lstrlib.c",
+            "ltable.c",
+            "ltablib.c",
+            "ltm.c",
+            "lundump.c",
+            "lutf8lib.c",
+            "lvm.c",
+            "lzio.c",
+        },
+        .flags = &.{"-std=c99"},
+    });
+    step.addIncludePath(b.path("vendor/lua"));
 }
