@@ -1294,6 +1294,7 @@ fn keynameToKeysym(name: []const u8) ?u64 {
         .{ "bracketleft", 0x005b },
         .{ "bracketright", 0x005d },
         .{ "backslash", 0x005c },
+        .{ "colon", 0x003a },
         .{ "semicolon", 0x003b },
         .{ "apostrophe", 0x0027 },
         .{ "quotedbl", 0x0022 },
