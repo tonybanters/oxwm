@@ -195,6 +195,13 @@ oxwm.key.bind({ modkey }, "D", oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" }))
 -- Copy screenshot to clipboard
 oxwm.key.bind({ modkey }, "S", oxwm.spawn({ "sh", "-c", "maim -s | xclip -selection clipboard -t image/png" }))
 oxwm.key.bind({ modkey }, "Q", oxwm.client.kill())
+-- Media keys (no modifiers)
+oxwm.key.bind({}, "XF86AudioRaiseVolume", oxwm.spawn({ "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5%" }))
+oxwm.key.bind({}, "XF86AudioLowerVolume", oxwm.spawn({ "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ -5%" }))
+oxwm.key.bind({}, "XF86AudioMute", oxwm.spawn({ "sh", "-c", "pactl set-sink-mute @DEFAULT_SINK@ toggle" }))
+oxwm.key.bind({}, "XF86AudioPlay", oxwm.spawn({ "sh", "-c", "playerctl play-pause" }))
+oxwm.key.bind({}, "XF86AudioNext", oxwm.spawn({ "sh", "-c", "playerctl next" }))
+oxwm.key.bind({}, "XF86AudioPrev", oxwm.spawn({ "sh", "-c", "playerctl previous" }))
 
 -- Keybind overlay - Shows important keybindings on screen
 oxwm.key.bind({ modkey, "Shift" }, "Slash", oxwm.show_keybinds())
