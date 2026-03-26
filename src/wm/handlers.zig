@@ -22,6 +22,7 @@ pub fn handleEvent(event: *xlib.XEvent, wm: *WindowManager) void {
     switch (event_type) {
         .map_request => handleMapRequest(&event.xmaprequest, wm),
         .configure_request => handleConfigureRequest(&event.xconfigurerequest, wm),
+        .configure_notify => handleConfigureNotify(&event.xconfigure, wm),
         .key_press => handleKeyPress(&event.xkey, wm),
         .destroy_notify => handleDestroyNotify(&event.xdestroywindow, wm),
         .unmap_notify => handleUnmapNotify(&event.xunmap, wm),
@@ -189,6 +190,14 @@ fn handleExpose(event: *xlib.XExposeEvent, wm: *WindowManager) void {
         bar.invalidate();
         bar.draw(wm.display.handle, wm.config);
     }
+}
+
+fn handleConfigureNotify(event: *xlib.XConfigureEvent, wm: *WindowManager) void {
+    // Only act on root window configures (xrandr screen resolution changes).
+    if (event.window != wm.display.root) return;
+
+    std.debug.print("configure_notify on root: width={d} height={d}\n", .{ event.width, event.height });
+    wm.updateMonitors();
 }
 
 fn handleButtonPress(event: *xlib.XButtonEvent, wm: *WindowManager) void {

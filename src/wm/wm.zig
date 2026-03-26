@@ -241,6 +241,73 @@ pub const WindowManager = struct {
         }
     }
 
+    /// Re-query screen geometry and update all monitors in-place.
+    /// Called when xrandr changes the screen resolution.
+    pub fn updateMonitors(self: *WindowManager) void {
+        if (xlib.XineramaIsActive(self.display.handle) != 0) {
+            var screen_count: c_int = 0;
+            const screens = xlib.XineramaQueryScreens(self.display.handle, &screen_count);
+
+            if (screen_count > 0 and screens != null) {
+                // Update existing monitors in-place so client/tag state is preserved.
+                var mon = self.monitors;
+                var index: usize = 0;
+                while (mon != null and index < @as(usize, @intCast(screen_count))) {
+                    const screen = screens[index];
+                    mon.?.mon_x = screen.x_org;
+                    mon.?.mon_y = screen.y_org;
+                    mon.?.mon_w = screen.width;
+                    mon.?.mon_h = screen.height;
+                    mon.?.win_x = screen.x_org;
+                    mon.?.win_y = screen.y_org;
+                    mon.?.win_w = screen.width;
+                    mon.?.win_h = screen.height;
+                    self.initMonitorGaps(mon.?);
+                    mon = mon.?.next;
+                    index += 1;
+                }
+
+                // Update tiling module's cached screen size from first screen.
+                tiling.setScreenSize(screens[0].width, screens[0].height);
+
+                _ = xlib.XFree(@ptrCast(screens));
+            }
+        } else {
+            // Single monitor fallback: use root window dimensions.
+            const new_w = self.display.screenWidth();
+            const new_h = self.display.screenHeight();
+
+            if (self.monitors) |mon| {
+                mon.mon_x = 0;
+                mon.mon_y = 0;
+                mon.mon_w = new_w;
+                mon.mon_h = new_h;
+                mon.win_x = 0;
+                mon.win_y = 0;
+                mon.win_w = new_w;
+                mon.win_h = new_h;
+                self.initMonitorGaps(mon);
+            }
+
+            tiling.setScreenSize(new_w, new_h);
+        }
+
+        // Rebuild bars (they hold pixmaps sized to old dimensions).
+        bar_mod.destroyBars(self.bars, self.display.handle);
+        self.bars = null;
+        self.setupBars();
+        self.rebuildBarBlocks();
+
+        // Re-arrange all monitors so windows fill the new geometry.
+        var mon = self.monitors;
+        while (mon) |m| {
+            core.arrange(m, self);
+            mon = m.next;
+        }
+
+        std.debug.print("monitors updated for new screen geometry\n", .{});
+    }
+
     fn initMonitorGaps(self: *WindowManager, mon: *Monitor) void {
         const cfg = &self.config;
         const any_gap_nonzero = cfg.gap_inner_h != 0 or cfg.gap_inner_v != 0 or
