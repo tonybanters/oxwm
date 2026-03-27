@@ -1,6 +1,6 @@
 .{
     .name = .oxwm,
-    .version = "0.11.3",
+    .version = "0.11.4",
     .fingerprint = 0x4b9ef3753914924d, // Changing this has security and trust implications.
     .minimum_zig_version = "0.15.2",
     .dependencies = .{
