@@ -6,6 +6,7 @@ const xlib = @import("../x11/xlib.zig");
 const atoms_mod = @import("../x11/atoms.zig");
 const chord_mod = @import("../keyboard/chord.zig");
 const monitor_mod = @import("../monitor.zig");
+const client_mod = @import("../client.zig");
 const bar_mod = @import("../bar/bar.zig");
 const blocks_mod = @import("../bar/blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
@@ -239,6 +240,162 @@ pub const WindowManager = struct {
             self.monitors = mon;
             self.selected_monitor = mon;
         }
+    }
+
+    pub fn updateGeom(self: *WindowManager) bool {
+        var dirty = false;
+
+        if (xlib.XineramaIsActive(self.display.handle) != 0) {
+            var n: usize = 0;
+            var m = self.monitors;
+            while (m) |mon| : (m = mon.next) n += 1;
+
+            var nn: c_int = 0;
+            const info = xlib.XineramaQueryScreens(self.display.handle, &nn);
+            if (info == null) return false;
+            defer _ = xlib.XFree(@ptrCast(info));
+
+            const new_count: usize = @intCast(nn);
+
+            for (n..new_count) |_| {
+                var last = self.monitors;
+                while (last) |mon| {
+                    if (mon.next == null) break;
+                    last = mon.next;
+                }
+                const new_mon = monitor_mod.create(self.allocator) orelse continue;
+                new_mon.lt[0] = &tiling.layout;
+                new_mon.lt[1] = &monocle.layout;
+                new_mon.lt[2] = &floating.layout;
+                new_mon.lt[3] = &scrolling.layout;
+                new_mon.lt[4] = &grid.layout;
+                for (0..10) |i| {
+                    new_mon.pertag.ltidxs[i][0] = new_mon.lt[0];
+                    new_mon.pertag.ltidxs[i][1] = new_mon.lt[1];
+                    new_mon.pertag.ltidxs[i][2] = new_mon.lt[2];
+                    new_mon.pertag.ltidxs[i][3] = new_mon.lt[3];
+                    new_mon.pertag.ltidxs[i][4] = new_mon.lt[4];
+                }
+                if (last) |l| {
+                    l.next = new_mon;
+                } else {
+                    self.monitors = new_mon;
+                }
+            }
+
+            var i: usize = 0;
+            m = self.monitors;
+            while (m != null and i < new_count) : (i += 1) {
+                const mon = m.?;
+                const screen = info[i];
+                if (i >= n or
+                    screen.x_org != mon.mon_x or screen.y_org != mon.mon_y or
+                    screen.width != mon.mon_w or screen.height != mon.mon_h)
+                {
+                    dirty = true;
+                    mon.num = @intCast(i);
+                    mon.mon_x = screen.x_org;
+                    mon.mon_y = screen.y_org;
+                    mon.mon_w = screen.width;
+                    mon.mon_h = screen.height;
+                    mon.win_x = screen.x_org;
+                    mon.win_y = screen.y_org;
+                    mon.win_w = screen.width;
+                    mon.win_h = screen.height;
+                    self.initMonitorGaps(mon);
+                }
+                m = mon.next;
+            }
+
+            for (new_count..n) |_| {
+                var last: ?*Monitor = null;
+                var iter = self.monitors;
+                while (iter) |mon| {
+                    if (mon.next == null) {
+                        last = mon;
+                        break;
+                    }
+                    iter = mon.next;
+                }
+                const removed = last orelse continue;
+
+                while (removed.clients) |c| {
+                    dirty = true;
+                    removed.clients = c.next;
+                    client_mod.detachStack(c);
+                    c.monitor = self.monitors;
+                    client_mod.attachAside(c);
+                    client_mod.attachStack(c);
+                }
+
+                if (self.selected_monitor == removed) {
+                    self.selected_monitor = self.monitors;
+                }
+
+                var prev: ?*Monitor = null;
+                iter = self.monitors;
+                while (iter) |mon| {
+                    if (mon == removed) {
+                        if (prev) |p| {
+                            p.next = removed.next;
+                        } else {
+                            self.monitors = removed.next;
+                        }
+                        break;
+                    }
+                    prev = mon;
+                    iter = mon.next;
+                }
+                monitor_mod.destroy(self.allocator, removed);
+            }
+
+            tiling.setScreenSize(info[0].width, info[0].height);
+        } else {
+            if (self.monitors == null) {
+                const mon = monitor_mod.create(self.allocator) orelse return false;
+                mon.lt[0] = &tiling.layout;
+                mon.lt[1] = &monocle.layout;
+                mon.lt[2] = &floating.layout;
+                mon.lt[3] = &scrolling.layout;
+                mon.lt[4] = &grid.layout;
+                self.monitors = mon;
+                self.selected_monitor = mon;
+            }
+
+            const sw = self.display.screenWidth();
+            const sh = self.display.screenHeight();
+
+            if (self.monitors) |mon| {
+                if (mon.mon_w != sw or mon.mon_h != sh) {
+                    dirty = true;
+                    mon.mon_x = 0;
+                    mon.mon_y = 0;
+                    mon.mon_w = sw;
+                    mon.mon_h = sh;
+                    mon.win_x = 0;
+                    mon.win_y = 0;
+                    mon.win_w = sw;
+                    mon.win_h = sh;
+                    self.initMonitorGaps(mon);
+                }
+            }
+
+            tiling.setScreenSize(sw, sh);
+        }
+
+        if (dirty) {
+            self.selected_monitor = self.monitors;
+            self.selected_monitor = monitor_mod.windowToMonitor(self, self.display.root);
+        }
+
+        return dirty;
+    }
+
+    pub fn rebuildBars(self: *WindowManager) void {
+        bar_mod.destroyBars(self.bars, self.display.handle);
+        self.bars = null;
+        self.setupBars();
+        self.rebuildBarBlocks();
     }
 
     fn initMonitorGaps(self: *WindowManager, mon: *Monitor) void {
