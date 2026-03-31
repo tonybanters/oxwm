@@ -190,6 +190,22 @@ function oxwm.client.focus_stack(dir) end
 ---@return table Action table for keybinding
 function oxwm.client.move_stack(dir) end
 
+---Focus the nearest window above the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_up() end
+
+---Focus the nearest window below the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_down() end
+
+---Focus the nearest window to the left of the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_left() end
+
+---Focus the nearest window to the right of the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_right() end
+
 ---Monitor management module
 ---@class oxwm.monitor
 oxwm.monitor = {}

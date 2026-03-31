@@ -254,6 +254,12 @@ oxwm.key.bind({ modkey, "Shift" }, "R", oxwm.restart())
 oxwm.key.bind({ modkey }, "J", oxwm.client.focus_stack(1))
 oxwm.key.bind({ modkey }, "K", oxwm.client.focus_stack(-1))
 
+-- Focus by direction (spatial)
+oxwm.key.bind({ modkey }, "Up", oxwm.client.focus_up())
+oxwm.key.bind({ modkey }, "Down", oxwm.client.focus_down())
+oxwm.key.bind({ modkey }, "Left", oxwm.client.focus_left())
+oxwm.key.bind({ modkey }, "Right", oxwm.client.focus_right())
+
 -- Window movement (swap position in stack)
 oxwm.key.bind({ modkey, "Shift" }, "J", oxwm.client.move_stack(1))
 oxwm.key.bind({ modkey, "Shift" }, "K", oxwm.client.move_stack(-1))
