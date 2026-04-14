@@ -4,8 +4,8 @@ const zon = @import("build.zig.zon");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const lua_dep = b.dependency("lua", .{});
-    const lua_headers = lua_dep.path("src/");
+
+    const is_openbsd = target.result.os.tag == .openbsd;
 
     const exe = b.addExecutable(.{
         .name = "oxwm",
@@ -26,12 +26,33 @@ pub fn build(b: *std.Build) void {
 
     exe.use_lld = false;
 
-    const lua = buildLua(b, lua_dep, target, optimize);
-    exe.linkLibrary(lua);
+    if (is_openbsd) {
+        const lua_dep = b.dependency("lua", .{});
+        const lua = buildLua(b, lua_dep, target, optimize);
+        exe.linkLibrary(lua);
+        exe.addLibraryPath(.{ .cwd_relative = "/usr/local/lib"});
+    } else {
+        exe.linkSystemLibrary("lua5.4");
+    }
+
     exe.linkSystemLibrary("X11");
     exe.linkSystemLibrary("Xinerama");
     exe.linkSystemLibrary("Xft");
     exe.linkSystemLibrary("fontconfig");
+
+    if (is_openbsd) {
+        exe.linkSystemLibrary("xcb");
+        exe.linkSystemLibrary("Xau");
+        exe.linkSystemLibrary("Xdmcp");
+        exe.linkSystemLibrary("Xext");
+        exe.linkSystemLibrary("Xrender");
+        exe.linkSystemLibrary("freetype");
+        exe.linkSystemLibrary("png");
+        exe.linkSystemLibrary("xml2");
+        exe.linkSystemLibrary("z");
+        exe.linkSystemLibrary("expat");
+    }
+
     exe.linkLibC();
 
     b.installArtifact(exe);
@@ -42,6 +63,30 @@ pub fn build(b: *std.Build) void {
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
+    }
+
+    if (is_openbsd) {
+        const openbsd_step = b.step("openbsd", "Build for OpenBSD (workaround for Zig 0.15.1 bug)");
+        const openbsd_build = b.addSystemCommand(&.{
+            "sh", "-c",
+            "zig build -Doptimize=Debug 2>&1 | grep -v 'syntax error' || true && " ++
+            "LUA_LIB=$(find .zig-cache/o -name 'liblua.a' -type f | head -1) && " ++
+            "BUILD_OPTS=$(find .zig-cache/c -name 'options.zig' -type f | head -1) && " ++
+            "LUA_INCLUDE=$(dirname $(find .zig-cache/o -name 'lua.h' -type f | head -1)) && " ++
+            "/usr/local/bin/zig build-exe \"$LUA_LIB\" " ++
+            "  -I/usr/X11R6/include -I/usr/local/include/libpng16 -I/usr/X11R6/include/freetype2 " ++
+            "  -I\"$LUA_INCLUDE\" -L/usr/X11R6/lib -L/usr/local/lib " ++
+            "  -lX11 -lxcb -lXau -lXdmcp -lXext -lXrender -lfreetype -lpng -lxml2 -lz -lexpat " ++
+            "  -lXinerama -lXft -lfontconfig -ODebug " ++
+            "  --dep build_options --dep templates/config.lua " ++
+            "  -Mroot=$(pwd)/src/main.zig -Mbuild_options=\"$BUILD_OPTS\" " ++
+            "  -Mtemplates/config.lua=$(pwd)/templates/config.lua -lc " ++
+            "  --cache-dir .zig-cache --global-cache-dir ~/.cache/zig " ++
+            "  --name oxwm --zig-lib-dir /usr/local/lib/zig/ 2>&1 | grep -Ev '(warning\\(link\\)|ld\\.lld: warning)' && " ++
+            "mkdir -p zig-out/bin && mv oxwm zig-out/bin/oxwm && chmod +x zig-out/bin/oxwm && " ++
+            "echo 'Build successful! Binary: zig-out/bin/oxwm' && ./zig-out/bin/oxwm --version"
+        });
+        openbsd_step.dependOn(&openbsd_build.step);
     }
 
     const test_step = b.step("test", "Run unit tests");
@@ -63,8 +108,26 @@ pub fn build(b: *std.Build) void {
         }),
     });
     src_main_unit_tests.use_lld = false;
-    src_main_unit_tests.root_module.addIncludePath(lua_headers);
-    src_main_unit_tests.linkLibrary(lua);
+
+    if (is_openbsd) {
+        const lua_dep = b.dependency("lua", .{});
+        const lua_test = buildLua(b, lua_dep, target, optimize);
+        src_main_unit_tests.linkLibrary(lua_test);
+        src_main_unit_tests.addLibraryPath(.{ .cwd_relative = "/usr/local/lib"});
+        src_main_unit_tests.linkSystemLibrary("xcb");
+        src_main_unit_tests.linkSystemLibrary("Xau");
+        src_main_unit_tests.linkSystemLibrary("Xdmcp");
+        src_main_unit_tests.linkSystemLibrary("Xext");
+        src_main_unit_tests.linkSystemLibrary("Xrender");
+        src_main_unit_tests.linkSystemLibrary("freetype");
+        src_main_unit_tests.linkSystemLibrary("png");
+        src_main_unit_tests.linkSystemLibrary("xml2");
+        src_main_unit_tests.linkSystemLibrary("z");
+        src_main_unit_tests.linkSystemLibrary("expat");
+    } else {
+        src_main_unit_tests.linkSystemLibrary("lua5.4");
+    }
+
     src_main_unit_tests.linkSystemLibrary("X11");
     src_main_unit_tests.linkSystemLibrary("Xinerama");
     src_main_unit_tests.linkSystemLibrary("Xft");
@@ -80,15 +143,20 @@ pub fn build(b: *std.Build) void {
         }),
     });
     lua_config_tests.use_lld = false;
-    lua_config_tests.root_module.addIncludePath(lua_headers);
-    const lua_config_module = b.createModule(.{
+    lua_config_tests.root_module.addImport("lua", b.createModule(.{
         .root_source_file = b.path("src/config/lua.zig"),
         .target = target,
         .optimize = optimize,
-    });
-    lua_config_module.addIncludePath(lua_headers);
-    lua_config_tests.root_module.addImport("lua", lua_config_module);
-    lua_config_tests.linkLibrary(lua);
+    }));
+
+    if (is_openbsd) {
+        const lua_dep = b.dependency("lua", .{});
+        const lua_test2 = buildLua(b, lua_dep, target, optimize);
+        lua_config_tests.linkLibrary(lua_test2);
+    } else {
+        lua_config_tests.linkSystemLibrary("lua5.4");
+    }
+
     lua_config_tests.linkLibC();
     test_step.dependOn(&b.addRunArtifact(lua_config_tests).step);
 
