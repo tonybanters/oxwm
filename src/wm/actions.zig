@@ -791,9 +791,9 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
                 }
             }
         },
-        .focus_next => focusstack(1, wm),
+        .focus_next => focusstack(if (int_arg < 0) -1 else 1, wm),
         .focus_prev => focusstack(-1, wm),
-        .move_next => movestack(1, wm),
+        .move_next => movestack(if (int_arg < 0) -1 else 1, wm),
         .move_prev => movestack(-1, wm),
         .resize_master => setmfact(@as(f32, @floatFromInt(int_arg)) / 1000.0, wm),
         .inc_master => incnmaster(1, wm),
