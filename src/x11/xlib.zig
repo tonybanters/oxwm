@@ -123,6 +123,7 @@ pub const XWarpPointer = c.XWarpPointer;
 pub const XGetModifierMapping = c.XGetModifierMapping;
 pub const XFreeModifiermap = c.XFreeModifiermap;
 pub const XModifierKeymap = c.XModifierKeymap;
+pub const XQueryKeymap = c.XQueryKeymap;
 pub const XK_Num_Lock = c.XK_Num_Lock;
 
 pub const Button1 = c.Button1;

@@ -320,6 +320,13 @@ oxwm.key.bind({ modkey, "Control", "Shift" }, "7", oxwm.tag.toggletag(6))
 oxwm.key.bind({ modkey, "Control", "Shift" }, "8", oxwm.tag.toggletag(7))
 oxwm.key.bind({ modkey, "Control", "Shift" }, "9", oxwm.tag.toggletag(8))
 
+-- Workspace switcher (Alt+Tab style grid of non-empty tags)
+-- Tab cycles forward, Shift+Tab cycles backward, Return validates, Escape cancels.
+-- The argument indicates the "master" modifier whose release also validates the
+-- selection (Windows-style). It must match the modifier used to trigger the
+-- keybind. Accepted values: "Mod1" / "Alt", "Mod4" / "Super", "Shift", "Ctrl".
+oxwm.key.bind({ "Mod1" }, "Tab", oxwm.tag.workspace_switcher("Mod1"))
+
 -------------------------------------------------------------------------------
 -- Advanced: Keychords
 -------------------------------------------------------------------------------

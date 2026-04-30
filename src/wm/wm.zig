@@ -11,6 +11,7 @@ const bar_mod = @import("../bar/bar.zig");
 const blocks_mod = @import("../bar/blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
 const overlay_mod = @import("../overlay.zig");
+const switcher_mod = @import("../switcher.zig");
 const animations = @import("../animations.zig");
 const tiling = @import("../layouts/tiling.zig");
 const monocle = @import("../layouts/monocle.zig");
@@ -81,6 +82,7 @@ pub const WindowManager = struct {
     chord: ChordState,
 
     overlay: ?*overlay_mod.KeybindOverlay,
+    switcher: ?*switcher_mod.WorkspaceSwitcher,
 
     scroll_animation: animations.ScrollAnimation,
     animation_config: animations.AnimationConfig,
@@ -124,6 +126,7 @@ pub const WindowManager = struct {
             .bars = null,
             .chord = .{},
             .overlay = null,
+            .switcher = null,
             .scroll_animation = .{},
             .animation_config = .{ .duration_ms = 150, .easing = .ease_out },
             .running = true,
@@ -145,6 +148,11 @@ pub const WindowManager = struct {
         if (self.overlay) |o| {
             o.deinit(self.allocator);
             self.overlay = null;
+        }
+
+        if (self.switcher) |s| {
+            s.deinit(self.allocator);
+            self.switcher = null;
         }
 
         var mon = self.monitors;
@@ -470,6 +478,13 @@ pub const WindowManager = struct {
 
     fn setupOverlay(self: *WindowManager) void {
         self.overlay = overlay_mod.KeybindOverlay.init(
+            self.display.handle,
+            self.display.screen,
+            self.display.root,
+            self.config.font,
+            self.allocator,
+        );
+        self.switcher = switcher_mod.WorkspaceSwitcher.init(
             self.display.handle,
             self.display.screen,
             self.display.root,

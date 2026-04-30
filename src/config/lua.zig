@@ -238,6 +238,9 @@ fn registerTagModule(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaTagSetBackAndForth);
     c.lua_setfield(state, -2, "set_back_and_forth");
 
+    c.lua_pushcfunction(state, luaTagWorkspaceSwitcher);
+    c.lua_setfield(state, -2, "workspace_switcher");
+
     c.lua_setfield(state, -2, "tag");
 }
 
@@ -694,6 +697,16 @@ fn luaTagViewNextNonempty(state: ?*c.lua_State) callconv(.c) c_int {
 fn luaTagViewPreviousNonempty(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     createActionTable(s, "ViewPreviousNonEmptyTag");
+    return 1;
+}
+
+fn luaTagWorkspaceSwitcher(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    if (c.lua_type(s, 1) == c.LUA_TSTRING) {
+        createActionTableWithString(s, "WorkspaceSwitcher");
+    } else {
+        createActionTable(s, "WorkspaceSwitcher");
+    }
     return 1;
 }
 
@@ -1422,6 +1435,7 @@ fn parseAction(name: []const u8) ?Action {
         .{ "ScrollLeft", Action.scroll_left },
         .{ "ScrollRight", Action.scroll_right },
         .{ "FocusDirection", Action.focus_direction },
+        .{ "WorkspaceSwitcher", Action.workspace_switcher },
     };
 
     inline for (action_map) |entry| {

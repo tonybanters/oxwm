@@ -893,5 +893,27 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         .scroll_left => core.scrollLayout(-1, wm),
         .scroll_right => core.scrollLayout(1, wm),
         .focus_direction => focusDirection(int_arg, wm),
+        .workspace_switcher => {
+            if (wm.switcher) |sw| {
+                if (sw.visible) {
+                    sw.hide();
+                } else {
+                    const mon = wm.selected_monitor orelse wm.monitors orelse return;
+                    const master_mask = parseMasterMod(str_arg) orelse @as(c_uint, @intCast(xlib.Mod1Mask));
+                    sw.show(mon, master_mask, &wm.config);
+                }
+            }
+        },
     }
+}
+
+fn parseMasterMod(s: ?[]const u8) ?c_uint {
+    const name = s orelse return null;
+    if (std.mem.eql(u8, name, "Mod1") or std.mem.eql(u8, name, "Alt")) return @intCast(xlib.Mod1Mask);
+    if (std.mem.eql(u8, name, "Mod4") or std.mem.eql(u8, name, "Super")) return @intCast(xlib.Mod4Mask);
+    if (std.mem.eql(u8, name, "Mod3")) return @intCast(xlib.Mod3Mask);
+    if (std.mem.eql(u8, name, "Mod5")) return @intCast(xlib.Mod5Mask);
+    if (std.mem.eql(u8, name, "Shift")) return @intCast(xlib.ShiftMask);
+    if (std.mem.eql(u8, name, "Ctrl") or std.mem.eql(u8, name, "Control")) return @intCast(xlib.ControlMask);
+    return null;
 }
