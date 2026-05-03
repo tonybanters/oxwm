@@ -37,6 +37,8 @@ pub const Bar = struct {
     scheme_urgent: ColorScheme,
     hide_vacant_tags: bool,
 
+    color_cache: std.AutoArrayHashMap(c_ulong, xlib.XftColor),
+
     allocator: std.mem.Allocator,
     blocks: std.ArrayList(Block),
     needs_redraw: bool,
@@ -130,6 +132,7 @@ pub const Bar = struct {
             .scheme_occupied = config.scheme_occupied,
             .scheme_urgent = config.scheme_urgent,
             .hide_vacant_tags = config.hide_vacant_tags,
+            .color_cache = std.AutoArrayHashMap(c_ulong, xlib.XftColor).init(allocator),
             .allocator = allocator,
             .blocks = .empty,
             .needs_redraw = true,
@@ -144,6 +147,14 @@ pub const Bar = struct {
 
     /// Destroys the bar's X resources and frees the allocation.
     pub fn destroy(self: *Bar, display: *xlib.Display) void {
+        const visual = xlib.XDefaultVisual(display, 0);
+        const colormap = xlib.XDefaultColormap(display, 0);
+        var iter = self.color_cache.iterator();
+        while (iter.next()) |entry| {
+            xlib.XftColorFree(display, visual, colormap, entry.value_ptr);
+        }
+        self.color_cache.deinit();
+
         if (self.xft_draw) |xft_draw| xlib.XftDrawDestroy(xft_draw);
         if (self.font) |font| xlib.XftFontClose(display, font);
 
@@ -227,7 +238,7 @@ pub const Bar = struct {
         }
 
         _ = xlib.XCopyArea(display, self.pixmap, self.window, self.graphics_context, 0, 0, @intCast(self.width), @intCast(self.height), 0, 0);
-        _ = xlib.XSync(display, xlib.False);
+        _ = xlib.XFlush(display);
 
         self.needs_redraw = false;
     }
@@ -285,19 +296,19 @@ pub const Bar = struct {
     fn drawText(self: *Bar, display: *xlib.Display, x: i32, y: i32, text: []const u8, color: c_ulong) void {
         if (self.xft_draw == null or self.font == null) return;
 
-        var xft_color: xlib.XftColor = undefined;
-        var render_color: xlib.XRenderColor = undefined;
-        render_color.red = @intCast((color >> 16 & 0xff) * 257);
-        render_color.green = @intCast((color >> 8 & 0xff) * 257);
-        render_color.blue = @intCast((color & 0xff) * 257);
-        render_color.alpha = 0xffff;
-
         const visual = xlib.XDefaultVisual(display, 0);
         const colormap = xlib.XDefaultColormap(display, 0);
 
-        _ = xlib.XftColorAllocValue(display, visual, colormap, &render_color, &xft_color);
-        xlib.XftDrawStringUtf8(self.xft_draw, &xft_color, self.font, x, y, text.ptr, @intCast(text.len));
-        xlib.XftColorFree(display, visual, colormap, &xft_color);
+        const gop = self.color_cache.getOrPut(color) catch return;
+        if (!gop.found_existing) {
+            var render_color: xlib.XRenderColor = undefined;
+            render_color.red = @intCast((color >> 16 & 0xff) * 257);
+            render_color.green = @intCast((color >> 8 & 0xff) * 257);
+            render_color.blue = @intCast((color & 0xff) * 257);
+            render_color.alpha = 0xffff;
+            _ = xlib.XftColorAllocValue(display, visual, colormap, &render_color, gop.value_ptr);
+        }
+        xlib.XftDrawStringUtf8(self.xft_draw, gop.value_ptr, self.font, x, y, text.ptr, @intCast(text.len));
     }
 
     fn textWidth(self: *Bar, display: *xlib.Display, text: []const u8) i32 {

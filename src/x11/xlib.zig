@@ -33,6 +33,7 @@ pub const XDisplayHeight = c.XDisplayHeight;
 pub const XNextEvent = c.XNextEvent;
 pub const XPending = c.XPending;
 pub const XSync = c.XSync;
+pub const XFlush = c.XFlush;
 pub const XSelectInput = c.XSelectInput;
 pub const XSetErrorHandler = c.XSetErrorHandler;
 pub const XGrabKey = c.XGrabKey;

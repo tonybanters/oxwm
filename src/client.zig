@@ -146,6 +146,25 @@ pub fn nextTagged(client: *Client) ?*Client {
     return null;
 }
 
+/// Inserts `client` just after `target` in the monitor's client list.
+/// Does nothing if they are on different monitors or target is null.
+pub fn attachAfter(client: *Client, target: ?*Client) void {
+    const at = target orelse {
+        attachAside(client);
+        return;
+    };
+    const monitor = at.monitor orelse {
+        attachAside(client);
+        return;
+    };
+    if (client.monitor != monitor) {
+        attachAside(client);
+        return;
+    }
+    client.next = at.next;
+    at.next = client;
+}
+
 /// Inserts `client` just after the first client that shares its tags,
 /// falling back to prepend if none exists.
 pub fn attachAside(client: *Client) void {

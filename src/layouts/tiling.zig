@@ -262,7 +262,45 @@ pub fn resizeClient(client: *Client, target_x: i32, target_y: i32, target_width:
     );
 
     sendConfigure(client);
-    _ = xlib.XSync(display, xlib.False);
+    _ = xlib.XFlush(display);
+}
+
+pub fn resizeClientAnim(client: *Client, target_x: i32, target_y: i32, target_width: i32, target_height: i32, flush: bool, animating: bool) void {
+    if (animating and client.x == target_x and client.y == target_y) return;
+
+    client.old_x = client.x;
+    client.old_y = client.y;
+    client.old_width = client.width;
+    client.old_height = client.height;
+    client.x = target_x;
+    client.y = target_y;
+    client.width = target_width;
+    client.height = target_height;
+
+    const display = display_handle orelse return;
+
+    if (animating) {
+        _ = xlib.XMoveWindow(display, client.window, target_x, target_y);
+    } else {
+        var window_changes: xlib.c.XWindowChanges = undefined;
+        window_changes.x = target_x;
+        window_changes.y = target_y;
+        window_changes.width = @intCast(@max(1, target_width));
+        window_changes.height = @intCast(@max(1, target_height));
+        window_changes.border_width = client.border_width;
+
+        _ = xlib.c.XConfigureWindow(
+            display,
+            client.window,
+            xlib.c.CWX | xlib.c.CWY | xlib.c.CWWidth | xlib.c.CWHeight | xlib.c.CWBorderWidth,
+            &window_changes,
+        );
+
+        sendConfigure(client);
+    }
+    if (flush) {
+        _ = xlib.XFlush(display);
+    }
 }
 
 pub fn sendConfigure(client: *Client) void {

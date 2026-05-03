@@ -113,8 +113,6 @@ pub const Block = struct {
             return false;
         }
 
-        self.last_update = now;
-
         const result = switch (self.data) {
             .static => |*s| s.content(&self.cached_content),
             .datetime => |*d| d.content(&self.cached_content),
@@ -124,6 +122,9 @@ pub const Block = struct {
             .cpu_temp => |*c| c.content(&self.cached_content),
         };
 
+        if (result.len == 0) return false;
+
+        self.last_update = now;
         self.cached_len = result.len;
         return true;
     }

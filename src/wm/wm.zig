@@ -654,21 +654,31 @@ pub const WindowManager = struct {
         _ = xlib.XSync(self.display.handle, xlib.False);
 
         while (self.running) {
+            var events_processed: u32 = 0;
             while (xlib.XPending(self.display.handle) > 0) {
                 var event = self.display.nextEvent();
                 eventFn(&event, self);
+                events_processed += 1;
+                if (events_processed >= 8) {
+                    if (self.scroll_animation.isActive()) {
+                        tickFn(self);
+                    }
+                    events_processed = 0;
+                }
             }
 
             tickFn(self);
 
-            var current_bar = self.bars;
-            while (current_bar) |bar| {
-                bar.updateBlocks();
-                bar.draw(self.display.handle, self.config);
-                current_bar = bar.next;
+            if (!self.scroll_animation.isActive()) {
+                var current_bar = self.bars;
+                while (current_bar) |bar| {
+                    bar.updateBlocks();
+                    bar.draw(self.display.handle, self.config);
+                    current_bar = bar.next;
+                }
             }
 
-            const poll_timeout: i32 = if (self.scroll_animation.isActive()) 16 else 1000;
+            const poll_timeout: i32 = if (self.scroll_animation.isActive()) 6 else 1000;
             _ = std.posix.poll(&fds, poll_timeout) catch 0;
         }
     }

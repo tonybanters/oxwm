@@ -94,10 +94,12 @@ fn handleConfigureRequest(event: *xlib.XConfigureRequestEvent, wm: *WindowManage
                 _ = xlib.XMoveResizeWindow(wm.display.handle, managed_client.window, managed_client.x, managed_client.y, @intCast(managed_client.width), @intCast(managed_client.height));
             }
         } else {
-            tiling.sendConfigure(managed_client);
+            if (!wm.scroll_animation.isActive()) {
+                tiling.sendConfigure(managed_client);
+            }
         }
     } else {
-        var changes: xlib.XWindowChanges = undefined;
+        var changes: xlib.c.XWindowChanges = undefined;
         changes.x = event.x;
         changes.y = event.y;
         changes.width = event.width;
@@ -107,7 +109,7 @@ fn handleConfigureRequest(event: *xlib.XConfigureRequestEvent, wm: *WindowManage
         changes.stack_mode = event.detail;
         _ = xlib.XConfigureWindow(wm.display.handle, event.window, @intCast(event.value_mask), &changes);
     }
-    _ = xlib.XSync(wm.display.handle, xlib.False);
+    _ = xlib.XFlush(wm.display.handle);
 }
 
 fn handleKeyPress(event: *xlib.XKeyEvent, wm: *WindowManager) void {
@@ -313,6 +315,8 @@ fn handleUnmapNotify(event: *xlib.XUnmapEvent, wm: *WindowManager) void {
 }
 
 fn handleEnterNotify(event: *xlib.XCrossingEvent, wm: *WindowManager) void {
+    if (wm.scroll_animation.isActive()) return;
+
     if ((event.mode != xlib.NotifyNormal or event.detail == xlib.NotifyInferior) and event.window != wm.display.root) {
         return;
     }
@@ -338,6 +342,8 @@ fn handleEnterNotify(event: *xlib.XCrossingEvent, wm: *WindowManager) void {
 }
 
 fn handleFocusIn(event: *xlib.XFocusChangeEvent, wm: *WindowManager) void {
+    if (wm.scroll_animation.isActive()) return;
+
     const selmon = wm.selected_monitor orelse return;
     const selected = selmon.sel orelse return;
     if (event.window != selected.window) {
@@ -346,6 +352,8 @@ fn handleFocusIn(event: *xlib.XFocusChangeEvent, wm: *WindowManager) void {
 }
 
 fn handleMotionNotify(event: *xlib.XMotionEvent, wm: *WindowManager) void {
+    if (wm.scroll_animation.isActive()) return;
+
     if (event.window != wm.display.root) return;
 
     const target_mon = monitor_mod.rectToMonitor(wm, event.x_root, event.y_root, 1, 1);
@@ -363,6 +371,8 @@ fn handlePropertyNotify(event: *xlib.XPropertyEvent, wm: *WindowManager) void {
     if (event.state == xlib.PropertyDelete) {
         return;
     }
+
+    if (wm.scroll_animation.isActive()) return;
 
     const client = client_mod.windowToClient(wm.monitors, event.window) orelse return;
 
