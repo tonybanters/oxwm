@@ -165,6 +165,10 @@ pub const Block = struct {
     battery_name: ?[]const u8 = null,
     thermal_zone: ?[]const u8 = null,
     click: ?ClickAction = null,
+    left_click: ?ClickAction = null,
+    right_click: ?ClickAction = null,
+    scroll_up: ?ClickAction = null,
+    scroll_down: ?ClickAction = null,
 };
 
 pub const ColorScheme = struct {

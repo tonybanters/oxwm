@@ -833,6 +833,22 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
     const click = parseClickAction(state, -1);
     c.lua_settop(state, -2);
 
+    _ = c.lua_getfield(state, idx, "left_click");
+    const left_click = parseClickAction(state, -1);
+    c.lua_settop(state, -2);
+
+    _ = c.lua_getfield(state, idx, "right_click");
+    const right_click = parseClickAction(state, -1);
+    c.lua_settop(state, -2);
+
+    _ = c.lua_getfield(state, idx, "scroll_up");
+    const scroll_up = parseClickAction(state, -1);
+    c.lua_settop(state, -2);
+
+    _ = c.lua_getfield(state, idx, "scroll_down");
+    const scroll_down = parseClickAction(state, -1);
+    c.lua_settop(state, -2);
+
     var block = Block{
         .block_type = .static,
         .format = format,
@@ -840,6 +856,10 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
         .color = color,
         .underline = underline,
         .click = click,
+        .left_click = left_click,
+        .right_click = right_click,
+        .scroll_up = scroll_up,
+        .scroll_down = scroll_down,
     };
 
     if (std.mem.eql(u8, block_type_str, "Ram")) {
@@ -960,7 +980,7 @@ fn luaBarBlockStatic(state: ?*c.lua_State) callconv(.c) c_int {
 fn luaBarBlockBattery(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
 
-    c.lua_createtable(s, 0, 7);
+    c.lua_createtable(s, 0, 11);
 
     _ = c.lua_pushstring(s, "Battery");
     c.lua_setfield(s, -2, "__block_type");
@@ -980,6 +1000,18 @@ fn luaBarBlockBattery(state: ?*c.lua_State) callconv(.c) c_int {
     _ = c.lua_getfield(s, 1, "click");
     c.lua_setfield(s, -2, "click");
 
+    _ = c.lua_getfield(s, 1, "left_click");
+    c.lua_setfield(s, -2, "left_click");
+
+    _ = c.lua_getfield(s, 1, "right_click");
+    c.lua_setfield(s, -2, "right_click");
+
+    _ = c.lua_getfield(s, 1, "scroll_up");
+    c.lua_setfield(s, -2, "scroll_up");
+
+    _ = c.lua_getfield(s, 1, "scroll_down");
+    c.lua_setfield(s, -2, "scroll_down");
+
     c.lua_createtable(s, 0, 4);
     _ = c.lua_getfield(s, 1, "charging");
     c.lua_setfield(s, -2, "charging");
@@ -995,7 +1027,7 @@ fn luaBarBlockBattery(state: ?*c.lua_State) callconv(.c) c_int {
 }
 
 fn createBlockTable(state: *c.lua_State, block_type: [*:0]const u8, arg: ?[]const u8) void {
-    c.lua_createtable(state, 0, 7);
+    c.lua_createtable(state, 0, 11);
 
     _ = c.lua_pushstring(state, block_type);
     c.lua_setfield(state, -2, "__block_type");
@@ -1014,6 +1046,18 @@ fn createBlockTable(state: *c.lua_State, block_type: [*:0]const u8, arg: ?[]cons
 
     _ = c.lua_getfield(state, 1, "click");
     c.lua_setfield(state, -2, "click");
+
+    _ = c.lua_getfield(state, 1, "left_click");
+    c.lua_setfield(state, -2, "left_click");
+
+    _ = c.lua_getfield(state, 1, "right_click");
+    c.lua_setfield(state, -2, "right_click");
+
+    _ = c.lua_getfield(state, 1, "scroll_up");
+    c.lua_setfield(state, -2, "scroll_up");
+
+    _ = c.lua_getfield(state, 1, "scroll_down");
+    c.lua_setfield(state, -2, "scroll_down");
 
     if (arg) |a| {
         var buf: [256]u8 = undefined;

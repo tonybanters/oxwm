@@ -232,7 +232,7 @@ fn handleButtonPress(event: *xlib.XButtonEvent, wm: *WindowManager) void {
         if (clicked_tag) |tag_index| {
             const tag_mask: u32 = @as(u32, 1) << @intCast(tag_index);
             core.view(tag_mask, wm);
-        } else if (bar.handleBlockClick(event.x)) |click_action| {
+        } else if (bar.handleBlockButton(event.x, event.button)) |click_action| {
             wm.next_spawn_floating = click_action.floating;
             wm.next_spawn_bypass_rules = click_action.bypass_rules;
             actions.spawnCommand(wm, click_action.command);
