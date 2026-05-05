@@ -158,7 +158,7 @@ fn registerBorderModule(state: *c.lua_State) void {
 }
 
 fn registerClientModule(state: *c.lua_State) void {
-    c.lua_createtable(state, 0, 5);
+    c.lua_createtable(state, 0, 10);
 
     c.lua_pushcfunction(state, luaClientKill);
     c.lua_setfield(state, -2, "kill");
@@ -174,6 +174,21 @@ fn registerClientModule(state: *c.lua_State) void {
 
     c.lua_pushcfunction(state, luaClientMoveStack);
     c.lua_setfield(state, -2, "move_stack");
+
+    c.lua_pushcfunction(state, luaClientFocusMaster);
+    c.lua_setfield(state, -2, "focus_master");
+
+    c.lua_pushcfunction(state, luaClientFocusFirstStack);
+    c.lua_setfield(state, -2, "focus_first_stack");
+
+    c.lua_pushcfunction(state, luaClientZoom);
+    c.lua_setfield(state, -2, "zoom");
+
+    c.lua_pushcfunction(state, luaClientSendToMaster);
+    c.lua_setfield(state, -2, "send_to_master");
+
+    c.lua_pushcfunction(state, luaClientSendToStack);
+    c.lua_setfield(state, -2, "send_to_stack");
 
     c.lua_setfield(state, -2, "client");
 }
@@ -596,6 +611,36 @@ fn luaClientMoveStack(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     const dir: i32 = @intCast(c.lua_tointegerx(s, 1, null));
     createActionTableWithInt(s, "MoveStack", dir);
+    return 1;
+}
+
+fn luaClientFocusMaster(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTable(s, "FocusMaster");
+    return 1;
+}
+
+fn luaClientFocusFirstStack(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTable(s, "FocusFirstStack");
+    return 1;
+}
+
+fn luaClientZoom(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTable(s, "Zoom");
+    return 1;
+}
+
+fn luaClientSendToMaster(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTable(s, "SendToMaster");
+    return 1;
+}
+
+fn luaClientSendToStack(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTable(s, "SendToStack");
     return 1;
 }
 
@@ -1348,6 +1393,11 @@ fn parseAction(name: []const u8) ?Action {
         .{ "ShowKeybinds", Action.show_keybinds },
         .{ "FocusStack", Action.focus_next },
         .{ "MoveStack", Action.move_next },
+        .{ "FocusMaster", Action.focus_master },
+        .{ "FocusFirstStack", Action.focus_first_stack },
+        .{ "Zoom", Action.zoom },
+        .{ "SendToMaster", Action.send_to_master },
+        .{ "SendToStack", Action.send_to_stack },
         .{ "ResizeMaster", Action.resize_master },
         .{ "IncMaster", Action.inc_master },
         .{ "DecMaster", Action.dec_master },

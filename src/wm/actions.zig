@@ -337,6 +337,112 @@ pub fn focusstack(direction: i32, wm: *WindowManager) void {
     }
 }
 
+pub fn focusMaster(wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (client_mod.isVisible(client)) {
+            core.focus(client, wm);
+            core.restack(monitor, wm);
+            return;
+        }
+    }
+}
+
+pub fn focusFirstStack(wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    var skipped: i32 = 0;
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (!client_mod.isVisible(client)) continue;
+        if (skipped >= monitor.nmaster) {
+            core.focus(client, wm);
+            core.restack(monitor, wm);
+            return;
+        }
+        skipped += 1;
+    }
+}
+
+pub fn sendToMaster(wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    const current = monitor.sel orelse return;
+    if (current.is_floating) return;
+
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (!client_mod.isVisible(client)) continue;
+        if (client == current) return; // already master
+        client_mod.swapClients(current, client);
+        core.arrange(monitor, wm);
+        core.focus(current, wm);
+        return;
+    }
+}
+
+pub fn sendToStack(wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    const current = monitor.sel orelse return;
+    if (current.is_floating) return;
+
+    var skipped: i32 = 0;
+    var stack_top: ?*Client = null;
+    var current_in_master = false;
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (!client_mod.isVisible(client)) continue;
+        if (skipped < monitor.nmaster) {
+            if (client == current) current_in_master = true;
+            skipped += 1;
+        } else {
+            stack_top = client;
+            break;
+        }
+    }
+    if (!current_in_master) return;
+    const target = stack_top orelse return;
+    client_mod.swapClients(current, target);
+    core.arrange(monitor, wm);
+    core.focus(current, wm);
+}
+
+pub fn zoom(wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    const current = monitor.sel orelse return;
+    if (current.is_floating) return;
+
+    var master: ?*Client = null;
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (client_mod.isVisible(client)) {
+            master = client;
+            break;
+        }
+    }
+    const m = master orelse return;
+
+    if (m == current) {
+        var skipped: i32 = 0;
+        var stack_top: ?*Client = null;
+        iter = monitor.clients;
+        while (iter) |client| : (iter = client.next) {
+            if (!client_mod.isVisible(client)) continue;
+            if (skipped >= monitor.nmaster) {
+                stack_top = client;
+                break;
+            }
+            skipped += 1;
+        }
+        if (stack_top) |target| {
+            client_mod.swapClients(current, target);
+        } else return;
+    } else {
+        client_mod.swapClients(current, m);
+    }
+    core.arrange(monitor, wm);
+    core.focus(current, wm);
+}
+
 pub fn toggleFloating(wm: *WindowManager) void {
     const monitor = wm.selected_monitor orelse return;
     const client = monitor.sel orelse return;
@@ -791,10 +897,15 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
                 }
             }
         },
-        .focus_next => focusstack(1, wm),
+        .focus_next => focusstack(int_arg, wm),
         .focus_prev => focusstack(-1, wm),
-        .move_next => movestack(1, wm),
+        .move_next => movestack(int_arg, wm),
         .move_prev => movestack(-1, wm),
+        .focus_master => focusMaster(wm),
+        .focus_first_stack => focusFirstStack(wm),
+        .zoom => zoom(wm),
+        .send_to_master => sendToMaster(wm),
+        .send_to_stack => sendToStack(wm),
         .resize_master => setmfact(@as(f32, @floatFromInt(int_arg)) / 1000.0, wm),
         .inc_master => incnmaster(1, wm),
         .dec_master => incnmaster(-1, wm),
