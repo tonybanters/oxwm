@@ -745,6 +745,14 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
             cfg.color,
             cfg.underline,
         ),
+        .volume => blocks_mod.Block.initVolume(
+            cfg.format,
+            cfg.format_muted orelse "muted",
+            cfg.sink orelse "@DEFAULT_SINK@",
+            cfg.interval,
+            cfg.color,
+            cfg.underline,
+        ),
     };
     block.click = cfg.click;
     return block;

@@ -67,6 +67,7 @@ pub const BlockType = enum {
     shell,
     battery,
     cpu_temp,
+    volume,
 };
 
 pub const ClickTarget = enum {
@@ -164,6 +165,8 @@ pub const Block = struct {
     format_full: ?[]const u8 = null,
     battery_name: ?[]const u8 = null,
     thermal_zone: ?[]const u8 = null,
+    format_muted: ?[]const u8 = null,
+    sink: ?[]const u8 = null,
     click: ?ClickAction = null,
 };
 
