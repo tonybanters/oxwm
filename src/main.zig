@@ -77,6 +77,13 @@ pub fn main() !void {
     std.debug.print("successfully became window manager\n", .{});
     std.debug.print("atoms initialized with EWMH support\n", .{});
 
+    const sigchld_handler = std.posix.Sigaction{
+        .handler = .{ .handler = std.posix.SIG.IGN },
+        .mask = std.mem.zeroes(std.posix.sigset_t),
+        .flags = 0,
+    };
+    std.posix.sigaction(std.posix.SIG.CHLD, &sigchld_handler, null);
+
     wm.grabKeybinds();
     wm.scanExistingWindows(window_manager.core.manage);
 
