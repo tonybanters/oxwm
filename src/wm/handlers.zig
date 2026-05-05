@@ -236,6 +236,9 @@ fn handleButtonPress(event: *xlib.XButtonEvent, wm: *WindowManager) void {
             wm.next_spawn_floating = click_action.floating;
             wm.next_spawn_bypass_rules = click_action.bypass_rules;
             actions.spawnCommand(wm, click_action.command);
+            // Re-poll blocks now so e.g. volume scroll reflects immediately.
+            // handleBlockButton already reset the matched block's last_update.
+            bar.updateBlocks();
         }
         return;
     }

@@ -265,13 +265,20 @@ pub const Bar = struct {
     pub fn handleBlockButton(self: *Bar, click_x: i32, button: u32) ?config_mod.ClickAction {
         for (self.blocks.items) |*block| {
             if (click_x < block.x_start or click_x >= block.x_end) continue;
-            return switch (button) {
+            const action = switch (button) {
                 1 => block.left_click orelse block.click,
                 3 => block.right_click,
                 4 => block.scroll_up,
                 5 => block.scroll_down,
                 else => null,
             };
+            if (action != null) {
+                // The action likely changed the state this block displays
+                // (e.g. volume scroll). Force re-poll on the next update tick
+                // instead of waiting out the block's interval.
+                block.last_update = 0;
+            }
+            return action;
         }
         return null;
     }
