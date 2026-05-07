@@ -383,6 +383,7 @@ fn handlePropertyNotify(event: *xlib.XPropertyEvent, wm: *WindowManager) void {
         wm.invalidateBars();
     } else if (event.atom == xlib.XA_WM_NAME or event.atom == wm.atoms.net_wm_name) {
         core.updateTitle(client, wm);
+        wm.invalidateBars();
     } else if (event.atom == wm.atoms.net_wm_window_type) {
         core.updateWindowType(client, wm);
     }
