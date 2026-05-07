@@ -27,12 +27,12 @@ pub fn build(b: *std.Build) void {
     exe.use_lld = false;
 
     const lua = buildLua(b, lua_dep, target, optimize);
-    exe.linkLibrary(lua);
-    exe.linkSystemLibrary("X11");
-    exe.linkSystemLibrary("Xinerama");
-    exe.linkSystemLibrary("Xft");
-    exe.linkSystemLibrary("fontconfig");
-    exe.linkLibC();
+    exe.root_module.linkLibrary(lua);
+    exe.root_module.linkSystemLibrary("X11", .{});
+    exe.root_module.linkSystemLibrary("Xinerama", .{});
+    exe.root_module.linkSystemLibrary("Xft", .{});
+    exe.root_module.linkSystemLibrary("fontconfig", .{});
+    exe.root_module.link_libc = true;
 
     b.installArtifact(exe);
 
@@ -64,12 +64,12 @@ pub fn build(b: *std.Build) void {
     });
     src_main_unit_tests.use_lld = false;
     src_main_unit_tests.root_module.addIncludePath(lua_headers);
-    src_main_unit_tests.linkLibrary(lua);
-    src_main_unit_tests.linkSystemLibrary("X11");
-    src_main_unit_tests.linkSystemLibrary("Xinerama");
-    src_main_unit_tests.linkSystemLibrary("Xft");
-    src_main_unit_tests.linkSystemLibrary("fontconfig");
-    src_main_unit_tests.linkLibC();
+    src_main_unit_tests.root_module.linkLibrary(lua);
+    src_main_unit_tests.root_module.linkSystemLibrary("X11", .{});
+    src_main_unit_tests.root_module.linkSystemLibrary("Xinerama", .{});
+    src_main_unit_tests.root_module.linkSystemLibrary("Xft", .{});
+    src_main_unit_tests.root_module.linkSystemLibrary("fontconfig", .{});
+    src_main_unit_tests.root_module.link_libc = true;
     test_step.dependOn(&b.addRunArtifact(src_main_unit_tests).step);
 
     const lua_config_tests = b.addTest(.{
@@ -88,8 +88,8 @@ pub fn build(b: *std.Build) void {
     });
     lua_config_module.addIncludePath(lua_headers);
     lua_config_tests.root_module.addImport("lua", lua_config_module);
-    lua_config_tests.linkLibrary(lua);
-    lua_config_tests.linkLibC();
+    lua_config_tests.root_module.linkLibrary(lua);
+    lua_config_tests.root_module.link_libc = true;
     test_step.dependOn(&b.addRunArtifact(lua_config_tests).step);
 
     const xephyr_step = b.step("xephyr", "Run in Xephyr (1280x800 on :2)");
@@ -174,9 +174,9 @@ fn buildLua(b: *std.Build, lua_dep: *std.Build.Dependency, target: std.Build.Res
             .optimize = optimize,
         }),
     });
-    lua.linkLibC();
-    lua.addIncludePath(lua_src.path("src/"));
-    lua.addCSourceFiles(.{
+    lua.root_module.link_libc = true;
+    lua.root_module.addIncludePath(lua_src.path("src/"));
+    lua.root_module.addCSourceFiles(.{
         .root = lua_src.path("src/"),
         .files = &.{
             "lapi.c",
