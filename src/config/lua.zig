@@ -251,7 +251,7 @@ fn registerRuleModule(state: *c.lua_State) void {
 }
 
 fn registerBarModule(state: *c.lua_State) void {
-    c.lua_createtable(state, 0, 10);
+    c.lua_createtable(state, 0, 12);
 
     c.lua_pushcfunction(state, luaBarSetFont);
     c.lua_setfield(state, -2, "set_font");
@@ -273,6 +273,12 @@ fn registerBarModule(state: *c.lua_State) void {
 
     c.lua_pushcfunction(state, luaBarSetHideVacantTags);
     c.lua_setfield(state, -2, "set_hide_vacant_tags");
+
+    c.lua_pushcfunction(state, luaBarSetShowTitle);
+    c.lua_setfield(state, -2, "set_show_title");
+
+    c.lua_pushcfunction(state, luaBarSetMaxTitleLength);
+    c.lua_setfield(state, -2, "set_max_title_length");
 
     c.lua_pushcfunction(state, luaBarSetPosition);
     c.lua_setfield(state, -2, "set_position");
@@ -926,6 +932,20 @@ fn luaBarSetHideVacantTags(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
     cfg.hide_vacant_tags = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
+fn luaBarSetShowTitle(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    cfg.show_bar_title = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
+fn luaBarSetMaxTitleLength(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    cfg.bar_title_max_length = @intCast(c.lua_tointegerx(s, 1, null));
     return 0;
 }
 

@@ -200,6 +200,8 @@ pub const Config = struct {
     auto_tile: bool = false,
     tag_back_and_forth: bool = false,
     hide_vacant_tags: bool = false,
+    show_bar_title: bool = false,
+    bar_title_max_length: u32 = 0,
     floating_position: FloatingPosition = .center,
     tiled_resize_mode: bool = false,
 
