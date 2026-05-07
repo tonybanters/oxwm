@@ -83,6 +83,8 @@
     oxwm.bar.set_scheme_selected(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.selectedScheme})
     oxwm.bar.set_scheme_urgent(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.urgentScheme})
     oxwm.bar.set_hide_vacant_tags(${boolToString cfg.bar.hideVacantTags})
+    oxwm.bar.set_show_title(${boolToString cfg.bar.showTitle})
+    oxwm.bar.set_max_title_length(${toString cfg.bar.maxTitleLength})
 
     oxwm.border.set_width(${toString cfg.border.width})
     oxwm.border.set_focused_color("#${cfg.border.focusedColor}")
@@ -304,6 +306,16 @@ in {
           type = types.bool;
           default = false;
           description = "Whether to hide tags with no windows from the bar";
+        };
+        showTitle = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Show the focused window title centered in the bar";
+        };
+        maxTitleLength = mkOption {
+          type = types.int;
+          default = 80;
+          description = "Maximum title length in characters (0 = no truncation)";
         };
         unoccupiedScheme = mkOption {
           type = types.listOf types.str;

@@ -36,6 +36,8 @@ pub const Bar = struct {
     scheme_occupied: ColorScheme,
     scheme_urgent: ColorScheme,
     hide_vacant_tags: bool,
+    show_title: bool,
+    max_title_len: u32,
 
     allocator: std.mem.Allocator,
     blocks: std.ArrayList(Block),
@@ -130,6 +132,8 @@ pub const Bar = struct {
             .scheme_occupied = config.scheme_occupied,
             .scheme_urgent = config.scheme_urgent,
             .hide_vacant_tags = config.hide_vacant_tags,
+            .show_title = config.show_bar_title,
+            .max_title_len = config.bar_title_max_length,
             .allocator = allocator,
             .blocks = .empty,
             .needs_redraw = true,
@@ -224,6 +228,35 @@ pub const Bar = struct {
                 self.fillRect(display, block_x, self.height - 2, content_width, 2, block.color());
             }
             block_x -= padding;
+        }
+
+        if (self.show_title) {
+            const middle_right = block_x + padding;
+            const middle_width = middle_right - x_position;
+            if (middle_width > 0) {
+                if (self.monitor.sel) |sel| {
+                    var title = std.mem.sliceTo(&sel.name, 0);
+                    if (title.len > 0) {
+                        var trunc_buf: [256]u8 = undefined;
+                        if (self.max_title_len > 0 and title.len > self.max_title_len) {
+                            if (self.max_title_len >= 3) {
+                                const keep = self.max_title_len - 3;
+                                @memcpy(trunc_buf[0..keep], title[0..keep]);
+                                @memcpy(trunc_buf[keep..self.max_title_len], "...");
+                                title = trunc_buf[0..self.max_title_len];
+                            } else {
+                                title = title[0..self.max_title_len];
+                            }
+                        }
+                        const title_width = self.textWidth(display, title);
+                        if (title_width <= middle_width) {
+                            const title_x = x_position + @divTrunc(middle_width - title_width, 2);
+                            const title_y = @divTrunc(self.height + self.font_height, 2) - 4;
+                            self.drawText(display, title_x, title_y, title, self.scheme_normal.foreground);
+                        }
+                    }
+                }
+            }
         }
 
         _ = xlib.XCopyArea(display, self.pixmap, self.window, self.graphics_context, 0, 0, @intCast(self.width), @intCast(self.height), 0, 0);
