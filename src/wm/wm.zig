@@ -456,9 +456,9 @@ pub const WindowManager = struct {
                 bar.addBlock(configBlockToBarBlock(cfg_block));
             }
         } else {
-            bar.addBlock(blocks_mod.Block.initRam("", 5, 0x7aa2f7, true));
-            bar.addBlock(blocks_mod.Block.initStatic(" | ", 0x666666, false));
-            bar.addBlock(blocks_mod.Block.initDatetime("", "%H:%M", 1, 0x0db9d7, true));
+            bar.addBlock(blocks_mod.Block.initRam("", 5, 0x7aa2f7, 0, true));
+            bar.addBlock(blocks_mod.Block.initStatic(" | ", 0x666666, 0, false));
+            bar.addBlock(blocks_mod.Block.initDatetime("", "%H:%M", 1, 0x0db9d7, 0, true));
         }
     }
 
@@ -713,20 +713,22 @@ pub const WindowManager = struct {
 /// Converts a config block description into a live status bar block.
 pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
     var block = switch (cfg.block_type) {
-        .static => blocks_mod.Block.initStatic(cfg.format, cfg.color, cfg.underline),
+        .static => blocks_mod.Block.initStatic(cfg.format, cfg.color, cfg.bg, cfg.underline),
         .datetime => blocks_mod.Block.initDatetime(
             cfg.format,
             cfg.datetime_format orelse "%H:%M",
             cfg.interval,
             cfg.color,
+            cfg.bg,
             cfg.underline,
         ),
-        .ram => blocks_mod.Block.initRam(cfg.format, cfg.interval, cfg.color, cfg.underline),
+        .ram => blocks_mod.Block.initRam(cfg.format, cfg.interval, cfg.color, cfg.bg, cfg.underline),
         .shell => blocks_mod.Block.initShell(
             cfg.format,
             cfg.command orelse "",
             cfg.interval,
             cfg.color,
+            cfg.bg,
             cfg.underline,
         ),
         .battery => blocks_mod.Block.initBattery(
@@ -736,6 +738,7 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
             cfg.battery_name orelse "BAT0",
             cfg.interval,
             cfg.color,
+            cfg.bg,
             cfg.underline,
         ),
         .cpu_temp => blocks_mod.Block.initCpuTemp(
@@ -743,6 +746,7 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
             cfg.thermal_zone orelse "thermal_zone0",
             cfg.interval,
             cfg.color,
+            cfg.bg,
             cfg.underline,
         ),
     };

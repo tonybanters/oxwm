@@ -194,6 +194,8 @@ pub const Bar = struct {
             const tag_text_width = self.textWidth(display, tag);
             const tag_width = tag_text_width + padding * 2;
 
+            self.fillRect(display, x_position, 0, tag_width, self.height, scheme.background);
+
             if (is_selected) {
                 self.fillRect(display, x_position, self.height - 3, tag_width, 3, scheme.border);
             }
@@ -219,6 +221,9 @@ pub const Bar = struct {
             block_x -= content_width;
             block.x_start = block_x;
             block.x_end = block_x + content_width;
+            if (block.bg() != 0) {
+                self.fillRect(display, block_x, 0, content_width, self.height, block.bg());
+            }
             self.drawText(display, block_x, @divTrunc(self.height + self.font_height, 2) - 4, content, block.color());
             if (block.underline) {
                 self.fillRect(display, block_x, self.height - 2, content_width, 2, block.color());

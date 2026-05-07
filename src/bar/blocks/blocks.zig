@@ -27,9 +27,9 @@ pub const Block = struct {
         cpu_temp: CpuTemp,
     };
 
-    pub fn initStatic(text: []const u8, col: c_ulong, ul: bool) Block {
+    pub fn initStatic(text: []const u8, col: c_ulong, background: c_ulong, ul: bool) Block {
         var block = Block{
-            .data = .{ .static = Static.init(text, col) },
+            .data = .{ .static = Static.init(text, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -40,9 +40,9 @@ pub const Block = struct {
         return block;
     }
 
-    pub fn initDatetime(format: []const u8, datetime_format: []const u8, interval_secs: u64, col: c_ulong, ul: bool) Block {
+    pub fn initDatetime(format: []const u8, datetime_format: []const u8, interval_secs: u64, col: c_ulong, background: c_ulong, ul: bool) Block {
         return .{
-            .data = .{ .datetime = DateTime.init(format, datetime_format, interval_secs, col) },
+            .data = .{ .datetime = DateTime.init(format, datetime_format, interval_secs, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -50,9 +50,9 @@ pub const Block = struct {
         };
     }
 
-    pub fn initRam(format: []const u8, interval_secs: u64, col: c_ulong, ul: bool) Block {
+    pub fn initRam(format: []const u8, interval_secs: u64, col: c_ulong, background: c_ulong, ul: bool) Block {
         return .{
-            .data = .{ .ram = Ram.init(format, interval_secs, col) },
+            .data = .{ .ram = Ram.init(format, interval_secs, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -60,9 +60,9 @@ pub const Block = struct {
         };
     }
 
-    pub fn initShell(format: []const u8, command: []const u8, interval_secs: u64, col: c_ulong, ul: bool) Block {
+    pub fn initShell(format: []const u8, command: []const u8, interval_secs: u64, col: c_ulong, background: c_ulong, ul: bool) Block {
         return .{
-            .data = .{ .shell = Shell.init(format, command, interval_secs, col) },
+            .data = .{ .shell = Shell.init(format, command, interval_secs, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -77,10 +77,11 @@ pub const Block = struct {
         battery_name: []const u8,
         interval_secs: u64,
         col: c_ulong,
+        background: c_ulong,
         ul: bool,
     ) Block {
         return .{
-            .data = .{ .battery = Battery.init(format_charging, format_discharging, format_full, battery_name, interval_secs, col) },
+            .data = .{ .battery = Battery.init(format_charging, format_discharging, format_full, battery_name, interval_secs, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -93,10 +94,11 @@ pub const Block = struct {
         thermal_zone: []const u8,
         interval_secs: u64,
         col: c_ulong,
+        background: c_ulong,
         ul: bool,
     ) Block {
         return .{
-            .data = .{ .cpu_temp = CpuTemp.init(format, thermal_zone, interval_secs, col) },
+            .data = .{ .cpu_temp = CpuTemp.init(format, thermal_zone, interval_secs, col, background) },
             .last_update = 0,
             .cached_content = undefined,
             .cached_len = 0,
@@ -147,6 +149,17 @@ pub const Block = struct {
             .shell => |s| s.color,
             .battery => |b| b.color,
             .cpu_temp => |c| c.color,
+        };
+    }
+
+    pub fn bg(self: *const Block) c_ulong {
+        return switch (self.data) {
+            .static => |s| s.bg,
+            .datetime => |d| d.bg,
+            .ram => |r| r.bg,
+            .shell => |s| s.bg,
+            .battery => |b| b.bg,
+            .cpu_temp => |c| c.bg,
         };
     }
 

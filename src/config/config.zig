@@ -157,6 +157,7 @@ pub const Block = struct {
     command: ?[]const u8 = null,
     interval: u32,
     color: u32,
+    bg: u32 = 0,
     underline: bool = true,
     datetime_format: ?[]const u8 = null,
     format_charging: ?[]const u8 = null,
