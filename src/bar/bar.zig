@@ -3,10 +3,12 @@ const xlib = @import("../x11/xlib.zig");
 const monitor_mod = @import("../monitor.zig");
 const blocks_mod = @import("blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
+const systray_mod = @import("systray.zig");
 const ColorScheme = config_mod.ColorScheme;
 
 const Monitor = monitor_mod.Monitor;
 const Block = blocks_mod.Block;
+pub const Systray = systray_mod.Systray;
 
 fn getLayoutSymbol(layout_index: u32, config: config_mod.Config) []const u8 {
     const layout = std.meta.intToEnum(config_mod.Layouts, layout_index) catch return "[?]";
@@ -41,15 +43,20 @@ pub const Bar = struct {
     blocks: std.ArrayList(Block),
     needs_redraw: bool,
     next: ?*Bar,
+    systray: ?*Systray,
+    systray_underline: bool,
+    systray_color: u32,
 
     /// Creates a bar window for `monitor` using the given config.
     /// Returns null on allocation failure or if the font cannot be loaded.
+    /// If `with_systray` is true, this bar will host the system tray.
     pub fn create(
         allocator: std.mem.Allocator,
         display: *xlib.Display,
         screen: c_int,
         monitor: *Monitor,
         config: config_mod.Config,
+        with_systray: bool,
     ) ?*Bar {
         const bar = allocator.create(Bar) catch return null;
 
@@ -115,6 +122,11 @@ pub const Bar = struct {
 
         _ = xlib.XMapWindow(display, window);
 
+        const systray: ?*Systray = if (with_systray)
+            Systray.init(allocator, display, screen, window, bar_height, config.scheme_normal.background)
+        else
+            null;
+
         bar.* = Bar{
             .window = window,
             .pixmap = pixmap,
@@ -134,6 +146,9 @@ pub const Bar = struct {
             .blocks = .empty,
             .needs_redraw = true,
             .next = null,
+            .systray = systray,
+            .systray_underline = false,
+            .systray_color = 0xffffff,
         };
 
         monitor.bar_win = window;
@@ -144,6 +159,8 @@ pub const Bar = struct {
 
     /// Destroys the bar's X resources and frees the allocation.
     pub fn destroy(self: *Bar, display: *xlib.Display) void {
+        if (self.systray) |tray| tray.deinit();
+
         if (self.xft_draw) |xft_draw| xlib.XftDrawDestroy(xft_draw);
         if (self.font) |font| xlib.XftFontClose(display, font);
 
@@ -156,6 +173,11 @@ pub const Bar = struct {
 
     pub fn addBlock(self: *Bar, block: Block) void {
         self.blocks.append(self.allocator, block) catch {};
+    }
+
+    pub fn setSystrayConfig(self: *Bar, underline: bool, col: u32) void {
+        self.systray_underline = underline;
+        self.systray_color = col;
     }
 
     pub fn clearBlocks(self: *Bar) void {
@@ -209,7 +231,10 @@ pub const Bar = struct {
         self.drawText(display, x_position, @divTrunc(self.height + self.font_height, 2) - 4, layout_symbol, self.scheme_normal.foreground);
         x_position += self.textWidth(display, layout_symbol) + padding;
 
-        var block_x: i32 = self.width - padding;
+        const systray_width: i32 = if (self.systray) |tray| tray.width() else 0;
+        var block_x: i32 = self.width - padding - systray_width;
+        if (systray_width > 0) block_x -= padding;
+
         var block_index: usize = self.blocks.items.len;
         while (block_index > 0) {
             block_index -= 1;
@@ -224,6 +249,14 @@ pub const Bar = struct {
                 self.fillRect(display, block_x, self.height - 2, content_width, 2, block.color());
             }
             block_x -= padding;
+        }
+
+        if (self.systray) |tray| {
+            const systray_x = self.width - systray_width - padding;
+            tray.updatePosition(systray_x, 0);
+            if (self.systray_underline and systray_width > 0) {
+                self.fillRect(display, systray_x, self.height - 2, systray_width, 2, self.systray_color);
+            }
         }
 
         _ = xlib.XCopyArea(display, self.pixmap, self.window, self.graphics_context, 0, 0, @intCast(self.width), @intCast(self.height), 0, 0);
@@ -347,4 +380,13 @@ fn hasClientsOnTag(monitor: *Monitor, tag_mask: u32) bool {
         current = client.next;
     }
     return false;
+}
+
+pub fn getSystray(bars: ?*Bar) ?*Systray {
+    var current = bars;
+    while (current) |bar| {
+        if (bar.systray) |tray| return tray;
+        current = bar.next;
+    }
+    return null;
 }

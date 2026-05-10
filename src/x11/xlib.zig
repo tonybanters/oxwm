@@ -275,3 +275,11 @@ pub const XMappingEvent = c.XMappingEvent;
 pub const XRefreshKeyboardMapping = c.XRefreshKeyboardMapping;
 pub const MappingKeyboard = c.MappingKeyboard;
 pub const MappingModifier = c.MappingModifier;
+
+pub const XReparentWindow = c.XReparentWindow;
+pub const XResizeWindow = c.XResizeWindow;
+pub const XSetSelectionOwner = c.XSetSelectionOwner;
+pub const XGetSelectionOwner = c.XGetSelectionOwner;
+pub const XA_CARDINAL = c.XA_CARDINAL;
+pub const XReparentEvent = c.XReparentEvent;
+pub const XResizeRequestEvent = c.XResizeRequestEvent;

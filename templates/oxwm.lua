@@ -324,6 +324,11 @@ function oxwm.bar.block.static(config) end
 ---@return table Block configuration
 function oxwm.bar.block.battery(config) end
 
+---Create a system tray block. Including this block enables the tray on the first bar; omitting it disables the tray entirely.
+---@param config {color: string|integer, underline: boolean}? Optional appearance config (only color and underline are used)
+---@return table Block configuration
+function oxwm.bar.block.systray(config) end
+
 ---Set normal tag color scheme (unselected, no windows)
 ---@param foreground string|integer Foreground color
 ---@param background string|integer Background color

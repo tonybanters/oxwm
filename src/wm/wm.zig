@@ -419,6 +419,8 @@ pub const WindowManager = struct {
     pub fn setupBars(self: *WindowManager) void {
         var current_monitor = self.monitors;
         var last_bar: ?*Bar = null;
+        var is_first_bar = true;
+        const want_systray = configHasSystray(self.config);
 
         while (current_monitor) |monitor| {
             const bar = Bar.create(
@@ -427,10 +429,12 @@ pub const WindowManager = struct {
                 self.display.screen,
                 monitor,
                 self.config,
+                is_first_bar and want_systray,
             ) orelse {
                 current_monitor = monitor.next;
                 continue;
             };
+            is_first_bar = false;
 
             if (tiling.bar_height == 0) {
                 tiling.setBarHeight(bar.height);
@@ -453,7 +457,11 @@ pub const WindowManager = struct {
     pub fn populateBarBlocks(self: *WindowManager, bar: *Bar) void {
         if (self.config.blocks.items.len > 0) {
             for (self.config.blocks.items) |cfg_block| {
-                bar.addBlock(configBlockToBarBlock(cfg_block));
+                if (cfg_block.block_type == .systray) {
+                    bar.setSystrayConfig(cfg_block.underline, cfg_block.color);
+                } else {
+                    bar.addBlock(configBlockToBarBlock(cfg_block));
+                }
             }
         } else {
             bar.addBlock(blocks_mod.Block.initRam("", 5, 0x7aa2f7, true));
@@ -480,6 +488,10 @@ pub const WindowManager = struct {
 
     pub fn windowToBar(self: *WindowManager, win: xlib.Window) ?*Bar {
         return bar_mod.windowToBar(self.bars, win);
+    }
+
+    pub fn getSystray(self: *WindowManager) ?*bar_mod.Systray {
+        return bar_mod.getSystray(self.bars);
     }
 
     /// Refreshes the cached numlock modifier bitmask from the X server's
@@ -710,6 +722,13 @@ pub const WindowManager = struct {
     }
 };
 
+fn configHasSystray(config: Config) bool {
+    for (config.blocks.items) |block| {
+        if (block.block_type == .systray) return true;
+    }
+    return false;
+}
+
 /// Converts a config block description into a live status bar block.
 pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
     var block = switch (cfg.block_type) {
@@ -753,6 +772,7 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
             cfg.color,
             cfg.underline,
         ),
+        .systray => blocks_mod.Block.initStatic("", 0, false),
     };
     block.click = cfg.click;
     return block;

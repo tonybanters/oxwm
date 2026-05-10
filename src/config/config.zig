@@ -68,6 +68,7 @@ pub const BlockType = enum {
     battery,
     cpu_temp,
     volume,
+    systray,
 };
 
 pub const ClickTarget = enum {

@@ -898,6 +898,8 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
             c.lua_settop(state, -2);
         }
         c.lua_settop(state, -2);
+    } else if (std.mem.eql(u8, block_type_str, "Systray")) {
+        block.block_type = .systray;
     } else {
         return null;
     }
@@ -1003,6 +1005,9 @@ fn luaBarBlockVolume(state: ?*c.lua_State) callconv(.c) c_int {
     c.lua_setfield(s, -2, "sink");
     c.lua_setfield(s, -2, "__arg");
 
+fn luaBarBlockSystray(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createBlockTable(s, "Systray", null);
     return 1;
 }
 
