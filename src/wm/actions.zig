@@ -797,12 +797,12 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
                 }
             }
         },
-        .focus_next => focusstack(1, wm),
+        .focus_next => focusstack(if (int_arg != 0) int_arg else 1, wm),
         .focus_prev => focusstack(-1, wm),
-        .move_next => movestack(1, wm),
+        .move_next => movestack(if (int_arg != 0) int_arg else 1, wm),
         .move_prev => movestack(-1, wm),
         .resize_master => setmfact(@as(f32, @floatFromInt(int_arg)) / 1000.0, wm),
-        .inc_master => incnmaster(1, wm),
+        .inc_master => incnmaster(if (int_arg != 0) int_arg else 1, wm),
         .dec_master => incnmaster(-1, wm),
         .toggle_floating => toggleFloating(wm),
         .toggle_fullscreen => toggleFullscreen(wm),
@@ -816,9 +816,9 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
             const tag_mask: u32 = @as(u32, 1) << @intCast(int_arg);
             core.view(tag_mask, wm);
         },
-        .view_next_tag => viewAdjacentTag(1, wm),
+        .view_next_tag => viewAdjacentTag(if (int_arg != 0) int_arg else 1, wm),
         .view_prev_tag => viewAdjacentTag(-1, wm),
-        .view_next_nonempty_tag => viewAdjacentNonemptyTag(1, wm),
+        .view_next_nonempty_tag => viewAdjacentNonemptyTag(if (int_arg != 0) int_arg else 1, wm),
         .view_prev_nonempty_tag => viewAdjacentNonemptyTag(-1, wm),
         .move_to_tag => {
             const tag_mask: u32 = @as(u32, 1) << @intCast(int_arg);
@@ -834,7 +834,7 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         },
         .focus_monitor => focusmon(int_arg, wm),
         .send_to_monitor => sendmon(int_arg, wm),
-        .scroll_left => core.scrollLayout(-1, wm),
-        .scroll_right => core.scrollLayout(1, wm),
+        .scroll_left => core.scrollLayout(if (int_arg != 0) int_arg else -1, wm),
+        .scroll_right => core.scrollLayout(if (int_arg != 0) int_arg else 1, wm),
     }
 }

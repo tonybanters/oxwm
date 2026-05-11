@@ -1358,6 +1358,7 @@ fn parseAction(name: []const u8) ?Action {
         .{ "Restart", Action.restart },
         .{ "ShowKeybinds", Action.show_keybinds },
         .{ "FocusStack", Action.focus_next },
+        .{ "FocusPrev", Action.focus_prev },
         .{ "MoveStack", Action.move_next },
         .{ "ResizeMaster", Action.resize_master },
         .{ "IncMaster", Action.inc_master },

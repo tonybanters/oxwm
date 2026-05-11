@@ -12,3 +12,4 @@ notes/
 *.md
 
 oxwm-rs/
+zig-pkg/
