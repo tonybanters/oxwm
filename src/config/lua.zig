@@ -294,8 +294,8 @@ fn registerBarModule(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaBarBlockBattery);
     c.lua_setfield(state, -2, "battery");
 
-    c.lua_pushcfunction(state, luaBarBlockSystray);
-    c.lua_setfield(state, -2, "systray");
+    c.lua_pushcfunction(state, luaBarBlockVolume);
+    c.lua_setfield(state, -2, "volume");
 
     c.lua_setfield(state, -2, "block");
 
@@ -889,6 +889,19 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
             c.lua_settop(state, -2);
         }
         c.lua_settop(state, -2);
+    } else if (std.mem.eql(u8, block_type_str, "Volume")) {
+        block.block_type = .volume;
+        _ = c.lua_getfield(state, idx, "__arg");
+        if (c.lua_type(state, -1) == c.LUA_TTABLE) {
+            _ = c.lua_getfield(state, -1, "format_muted");
+            block.format_muted = dupeLuaString(state, -1);
+            c.lua_settop(state, -2);
+
+            _ = c.lua_getfield(state, -1, "sink");
+            block.sink = dupeLuaString(state, -1);
+            c.lua_settop(state, -2);
+        }
+        c.lua_settop(state, -2);
     } else if (std.mem.eql(u8, block_type_str, "Systray")) {
         block.block_type = .systray;
     } else {
@@ -965,6 +978,36 @@ fn luaBarBlockStatic(state: ?*c.lua_State) callconv(.c) c_int {
     createBlockTable(s, "Static", text);
     return 1;
 }
+
+fn luaBarBlockVolume(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+
+    c.lua_createtable(s, 0, 7);
+
+    _ = c.lua_pushstring(s, "Volume");
+    c.lua_setfield(s, -2, "__block_type");
+
+    _ = c.lua_getfield(s, 1, "format");
+    c.lua_setfield(s, -2, "format");
+
+    _ = c.lua_getfield(s, 1, "interval");
+    c.lua_setfield(s, -2, "interval");
+
+    _ = c.lua_getfield(s, 1, "color");
+    c.lua_setfield(s, -2, "color");
+
+    _ = c.lua_getfield(s, 1, "underline");
+    c.lua_setfield(s, -2, "underline");
+
+    _ = c.lua_getfield(s, 1, "click");
+    c.lua_setfield(s, -2, "click");
+
+    c.lua_createtable(s, 0, 2);
+    _ = c.lua_getfield(s, 1, "format_muted");
+    c.lua_setfield(s, -2, "format_muted");
+    _ = c.lua_getfield(s, 1, "sink");
+    c.lua_setfield(s, -2, "sink");
+    c.lua_setfield(s, -2, "__arg");
 
 fn luaBarBlockSystray(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;

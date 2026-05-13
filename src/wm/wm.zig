@@ -769,6 +769,14 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
             cfg.color,
             cfg.underline,
         ),
+        .volume => blocks_mod.Block.initVolume(
+            cfg.format,
+            cfg.format_muted orelse "muted",
+            cfg.sink orelse "@DEFAULT_SINK@",
+            cfg.interval,
+            cfg.color,
+            cfg.underline,
+        ),
         .systray => blocks_mod.Block.initStatic("", 0, false),
     };
     block.click = cfg.click;
