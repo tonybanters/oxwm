@@ -120,11 +120,11 @@ pub fn build(b: *std.Build) void {
         "sudo", "sh", "-c",
         "cp zig-out/bin/oxwm /usr/bin/oxwm && " ++
             "chmod +x /usr/bin/oxwm && " ++
-            "mkdir -p /usr/share/xsessions && " ++
+            "mkdir -p /usr/share/xsessions || true && " ++
             "cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop && " ++
-            "mkdir -p /usr/share/man/man1 && " ++
+            "mkdir -p /usr/share/man/man1 || true && " ++
             "cp resources/oxwm.1 /usr/share/man/man1/oxwm.1 && " ++
-            "mkdir -p /usr/share/oxwm && " ++
+            "mkdir -p /usr/share/oxwm || true && " ++
             "cp templates/oxwm.lua /usr/share/oxwm/oxwm.lua && " ++
             "echo 'oxwm installed to /usr/bin/oxwm'",
     }).step);
