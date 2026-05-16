@@ -23,7 +23,6 @@
       default = pkgs.mkShell {
         inputsFrom = [self.packages.${pkgs.stdenv.hostPlatform.system}.oxwm];
         packages = [
-          pkgs.zig
           pkgs.zls
           pkgs.zon2nix
           pkgs.alacritty
