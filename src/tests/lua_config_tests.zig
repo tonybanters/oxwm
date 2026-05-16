@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const lua = @import("lua");
+const lua = @import("../config/lua.zig");
 const Config = lua.config_mod.Config;
 
 test "test-config.lua loads without errors" {
