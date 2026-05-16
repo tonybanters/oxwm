@@ -147,6 +147,10 @@ fn addWrapper(b: *std.Build, artifact: *std.Build.Step.Run, opts: WrapOptions) !
     // Make the wrapper run before oxwm
     artifact.step.dependOn(&cmd.step);
     artifact.setEnvironmentVariable("DISPLAY", disp);
+
+    // Xwayland fix: unset WAYLAND_DISPLAY so that apps can start inside oxwm
+    if (app == .xw or app == .xwayland)
+        artifact.setEnvironmentVariable("WAYLAND_DISPLAY", "");
 }
 
 fn flatten(allocator: std.mem.Allocator, array: []const []const u8, sep: u8) ![]const u8 {
@@ -160,30 +164,3 @@ fn flatten(allocator: std.mem.Allocator, array: []const []const u8, sep: u8) ![]
     return writer.toOwnedSlice();
 } 
 
-fn addXephyrRun(b: *std.Build, exe: *std.Build.Step.Compile, multimon: bool) *std.Build.Step.Run {
-    const kill_cmd = if (multimon)
-        "pkill -9 Xephyr || true; Xephyr +xinerama -glamor -screen 640x480 -screen 640x480 :2 & sleep 1"
-    else
-        "pkill -9 Xephyr || true; Xephyr -screen 1280x800 :2 & sleep 1";
-
-    const setup = b.addSystemCommand(&.{ "sh", "-c", kill_cmd });
-
-    const run_wm = b.addRunArtifact(exe);
-    run_wm.step.dependOn(&setup.step);
-    run_wm.setEnvironmentVariable("DISPLAY", ":2");
-    run_wm.addArgs(&.{ "-c", "resources/test-config.lua" });
-
-    return run_wm;
-}
-
-fn addXwaylandRun(b: *std.Build, exe: *std.Build.Step.Compile) *std.Build.Step.Run {
-    const cmd = "Xwayland -retro -noreset :2 & sleep 1";
-
-    const setup = b.addSystemCommand(&.{ "sh", "-c", cmd });
-
-    const run_wm = b.addRunArtifact(exe);
-    run_wm.step.dependOn(&setup.step);
-    run_wm.setEnvironmentVariable("DISPLAY", ":2");
-
-    return run_wm;
-}
