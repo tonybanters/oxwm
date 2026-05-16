@@ -176,6 +176,7 @@ fn buildLua(b: *std.Build, lua_dep: *std.Build.Dependency, target: std.Build.Res
             .link_libc = true,
         }),
     });
+    lua.root_module.addCMacro("LUA_USE_POSIX", "1");
     lua.root_module.addIncludePath(lua_src.path("src/"));
     lua.root_module.addCSourceFiles(.{
         .root = lua_src.path("src/"),
