@@ -110,6 +110,10 @@ pub fn manage(win: xlib.Window, window_attrs: *xlib.XWindowAttributes, wm: *Wind
     arrange(monitor, wm);
     _ = xlib.XMapWindow(wm.display.handle, win);
     focus(null, wm);
+
+    if (client.rule_fullscreen) {
+        setFullscreen(client, true, wm);
+    }
 }
 
 pub fn unmanage(client: *Client, wm: *WindowManager) void {
@@ -472,6 +476,7 @@ pub fn applyRules(client: *Client, wm: *WindowManager) void {
 
     client.is_floating = false;
     client.tags = 0;
+    client.rule_fullscreen = false;
     var rule_focus = false;
 
     for (wm.config.rules.items) |rule| {
@@ -481,6 +486,7 @@ pub fn applyRules(client: *Client, wm: *WindowManager) void {
 
         if (class_matches and instance_matches and title_matches) {
             client.is_floating = rule.is_floating;
+            client.rule_fullscreen = rule.is_fullscreen;
             client.tags |= rule.tags;
             if (rule.monitor >= 0) {
                 var target = wm.monitors;

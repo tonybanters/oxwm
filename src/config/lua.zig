@@ -735,6 +735,7 @@ fn luaRuleAdd(state: ?*c.lua_State) callconv(.c) c_int {
         .title = null,
         .tags = 0,
         .is_floating = false,
+        .is_fullscreen = false,
         .monitor = -1,
         .focus = false,
     };
@@ -769,6 +770,12 @@ fn luaRuleAdd(state: ?*c.lua_State) callconv(.c) c_int {
     _ = c.lua_getfield(s, 1, "floating");
     if (c.lua_type(s, -1) == c.LUA_TBOOLEAN) {
         rule.is_floating = c.lua_toboolean(s, -1) != 0;
+    }
+    c.lua_settop(s, -2);
+
+    _ = c.lua_getfield(s, 1, "fullscreen");
+    if (c.lua_type(s, -1) == c.LUA_TBOOLEAN) {
+        rule.is_fullscreen = c.lua_toboolean(s, -1) != 0;
     }
     c.lua_settop(s, -2);
 

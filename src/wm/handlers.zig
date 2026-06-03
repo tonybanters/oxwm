@@ -74,6 +74,15 @@ fn handleConfigureRequest(event: *xlib.XConfigureRequestEvent, wm: *WindowManage
     const client = client_mod.windowToClient(wm.monitors, event.window);
 
     if (client) |managed_client| {
+        if (managed_client.is_fullscreen) {
+            if (managed_client.monitor) |monitor| {
+                tiling.resizeClient(managed_client, monitor.mon_x, monitor.mon_y, monitor.mon_w, monitor.mon_h);
+            } else {
+                tiling.sendConfigure(managed_client);
+            }
+            _ = xlib.XSync(wm.display.handle, xlib.False);
+            return;
+        }
         if ((event.value_mask & xlib.c.CWBorderWidth) != 0) {
             managed_client.border_width = event.border_width;
         } else if (managed_client.is_floating or (managed_client.monitor != null and managed_client.monitor.?.lt[managed_client.monitor.?.sel_lt] == null)) {
