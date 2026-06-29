@@ -735,7 +735,7 @@ fn configHasSystray(config: Config) bool {
     for (config.blocks.items) |block| {
         if (block.block_type == .systray) return true;
     }
-    return false;
+    return true;
 }
 
 /// Converts a config block description into a live status bar block.

@@ -100,6 +100,16 @@ local blocks = {
         -- click = "alacritty -e btop",
         -- click = { command = "bluetui", floating = true },
     }),
+    oxwm.bar.block.static({
+        text = "│",
+        interval = 999999999,
+        color = colors.lavender,
+        underline = false,
+    }),
+    oxwm.bar.block.systray({
+        color = colors.bg,
+        underline = false,
+    }),
 };
 
 -------------------------------------------------------------------------------
