@@ -35,6 +35,8 @@ pub const Action = enum {
     send_to_monitor,
     scroll_left,
     scroll_right,
+    focus_direction,
+    workspace_switcher,
 };
 
 pub const KeyPress = struct {

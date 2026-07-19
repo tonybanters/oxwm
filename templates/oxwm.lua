@@ -190,6 +190,22 @@ function oxwm.client.focus_stack(dir) end
 ---@return table Action table for keybinding
 function oxwm.client.move_stack(dir) end
 
+---Focus the nearest window above the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_up() end
+
+---Focus the nearest window below the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_down() end
+
+---Focus the nearest window to the left of the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_left() end
+
+---Focus the nearest window to the right of the current one
+---@return table Action table for keybinding
+function oxwm.client.focus_right() end
+
 ---Monitor management module
 ---@class oxwm.monitor
 oxwm.monitor = {}
@@ -276,6 +292,13 @@ function oxwm.tag.toggletag(index) end
 ---When enabled an attempt to view the current tag switches back to the previously viewed tag.
 ---@param enabled boolean Enable or disable tag_back_and_forth
 function oxwm.tag.set_back_and_forth(enabled) end
+
+---Open an Alt+Tab style workspace switcher: a centered grid of non-empty tags.
+---Tab cycles forward, Shift+Tab backward, Return validates, Escape cancels.
+---Releasing the master modifier (passed as argument) also validates, like Windows.
+---@param master_mod string|nil Master modifier whose release confirms ("Mod1", "Mod4", "Shift", "Ctrl"). Should match the modifier used in the keybind.
+---@return table Action table for keybinding
+function oxwm.tag.workspace_switcher(master_mod) end
 
 ---Status bar configuration module
 ---@class oxwm.bar

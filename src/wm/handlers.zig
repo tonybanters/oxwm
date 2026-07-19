@@ -24,6 +24,7 @@ pub fn handleEvent(event: *xlib.XEvent, wm: *WindowManager) void {
         .configure_request => handleConfigureRequest(&event.xconfigurerequest, wm),
         .configure_notify => handleConfigureNotify(&event.xconfigure, wm),
         .key_press => handleKeyPress(&event.xkey, wm),
+        .key_release => handleKeyRelease(&event.xkey, wm),
         .destroy_notify => handleDestroyNotify(&event.xdestroywindow, wm),
         .unmap_notify => handleUnmapNotify(&event.xunmap, wm),
         .enter_notify => handleEnterNotify(&event.xcrossing, wm),
@@ -128,6 +129,10 @@ fn handleConfigureRequest(event: *xlib.XConfigureRequestEvent, wm: *WindowManage
 fn handleKeyPress(event: *xlib.XKeyEvent, wm: *WindowManager) void {
     const keysym = xlib.XKeycodeToKeysym(wm.display.handle, @intCast(event.keycode), 0);
 
+    if (wm.switcher) |sw| {
+        if (sw.visible and sw.handleKey(keysym, event.state, wm)) return;
+    }
+
     if (wm.overlay) |overlay| {
         if (overlay.handleKey(keysym)) return;
     }
@@ -184,6 +189,12 @@ fn handleKeyPress(event: *xlib.XKeyEvent, wm: *WindowManager) void {
         wm.chord.grabKeyboard(wm.display.handle, wm.display.root);
     } else {
         wm.chord.reset(wm.display.handle);
+    }
+}
+
+fn handleKeyRelease(event: *xlib.XKeyEvent, wm: *WindowManager) void {
+    if (wm.switcher) |sw| {
+        if (sw.visible) _ = sw.handleKeyRelease(@intCast(event.keycode), wm);
     }
 }
 

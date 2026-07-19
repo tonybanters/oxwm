@@ -350,6 +350,60 @@ pub fn focusstack(direction: i32, wm: *WindowManager) void {
     }
 }
 
+/// Direction encoding: 0=up, 1=down, 2=left, 3=right
+pub fn focusDirection(direction: i32, wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    const current = monitor.sel orelse return;
+
+    const cur_cx = current.x + @divTrunc(current.width, 2);
+    const cur_cy = current.y + @divTrunc(current.height, 2);
+
+    var best: ?*Client = null;
+    var best_dist: i64 = std.math.maxInt(i64);
+
+    var iter = monitor.clients;
+    while (iter) |client| : (iter = client.next) {
+        if (client == current or !client_mod.isVisible(client)) continue;
+
+        const cx = client.x + @divTrunc(client.width, 2);
+        const cy = client.y + @divTrunc(client.height, 2);
+
+        const dx: i64 = @as(i64, cx) - @as(i64, cur_cx);
+        const dy: i64 = @as(i64, cy) - @as(i64, cur_cy);
+
+        // Check if the candidate is in the correct direction
+        const in_direction = switch (direction) {
+            0 => dy < 0, // up
+            1 => dy > 0, // down
+            2 => dx < 0, // left
+            3 => dx > 0, // right
+            else => false,
+        };
+        if (!in_direction) continue;
+
+        // Distance metric: use squared euclidean distance, but weight the
+        // perpendicular axis more heavily so we prefer windows that are
+        // closely aligned with the movement direction.
+        const dist = switch (direction) {
+            0, 1 => dy * dy + dx * dx * 4, // vertical: penalize horizontal offset
+            2, 3 => dx * dx + dy * dy * 4, // horizontal: penalize vertical offset
+            else => unreachable,
+        };
+
+        if (dist < best_dist) {
+            best_dist = dist;
+            best = client;
+        }
+    }
+
+    if (best) |client| {
+        core.focus(client, wm);
+        if (client.monitor) |client_monitor| {
+            core.restack(client_monitor, wm);
+        }
+    }
+}
+
 pub fn toggleFloating(wm: *WindowManager) void {
     const monitor = wm.selected_monitor orelse return;
     const client = monitor.sel orelse return;
@@ -856,5 +910,28 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         .send_to_monitor => sendmon(int_arg, wm),
         .scroll_left => core.scrollLayout(-1, wm),
         .scroll_right => core.scrollLayout(1, wm),
+        .focus_direction => focusDirection(int_arg, wm),
+        .workspace_switcher => {
+            if (wm.switcher) |sw| {
+                if (sw.visible) {
+                    sw.hide();
+                } else {
+                    const mon = wm.selected_monitor orelse wm.monitors orelse return;
+                    const master_mask = parseMasterMod(str_arg) orelse @as(c_uint, @intCast(xlib.Mod1Mask));
+                    sw.show(mon, master_mask, &wm.config);
+                }
+            }
+        },
     }
+}
+
+fn parseMasterMod(s: ?[]const u8) ?c_uint {
+    const name = s orelse return null;
+    if (std.mem.eql(u8, name, "Mod1") or std.mem.eql(u8, name, "Alt")) return @intCast(xlib.Mod1Mask);
+    if (std.mem.eql(u8, name, "Mod4") or std.mem.eql(u8, name, "Super")) return @intCast(xlib.Mod4Mask);
+    if (std.mem.eql(u8, name, "Mod3")) return @intCast(xlib.Mod3Mask);
+    if (std.mem.eql(u8, name, "Mod5")) return @intCast(xlib.Mod5Mask);
+    if (std.mem.eql(u8, name, "Shift")) return @intCast(xlib.ShiftMask);
+    if (std.mem.eql(u8, name, "Ctrl") or std.mem.eql(u8, name, "Control")) return @intCast(xlib.ControlMask);
+    return null;
 }

@@ -158,7 +158,7 @@ fn registerBorderModule(state: *c.lua_State) void {
 }
 
 fn registerClientModule(state: *c.lua_State) void {
-    c.lua_createtable(state, 0, 5);
+    c.lua_createtable(state, 0, 9);
 
     c.lua_pushcfunction(state, luaClientKill);
     c.lua_setfield(state, -2, "kill");
@@ -174,6 +174,18 @@ fn registerClientModule(state: *c.lua_State) void {
 
     c.lua_pushcfunction(state, luaClientMoveStack);
     c.lua_setfield(state, -2, "move_stack");
+
+    c.lua_pushcfunction(state, luaClientFocusUp);
+    c.lua_setfield(state, -2, "focus_up");
+
+    c.lua_pushcfunction(state, luaClientFocusDown);
+    c.lua_setfield(state, -2, "focus_down");
+
+    c.lua_pushcfunction(state, luaClientFocusLeft);
+    c.lua_setfield(state, -2, "focus_left");
+
+    c.lua_pushcfunction(state, luaClientFocusRight);
+    c.lua_setfield(state, -2, "focus_right");
 
     c.lua_setfield(state, -2, "client");
 }
@@ -225,6 +237,9 @@ fn registerTagModule(state: *c.lua_State) void {
 
     c.lua_pushcfunction(state, luaTagSetBackAndForth);
     c.lua_setfield(state, -2, "set_back_and_forth");
+
+    c.lua_pushcfunction(state, luaTagWorkspaceSwitcher);
+    c.lua_setfield(state, -2, "workspace_switcher");
 
     c.lua_setfield(state, -2, "tag");
 }
@@ -612,6 +627,30 @@ fn luaClientMoveStack(state: ?*c.lua_State) callconv(.c) c_int {
     return 1;
 }
 
+fn luaClientFocusUp(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTableWithInt(s, "FocusDirection", 0);
+    return 1;
+}
+
+fn luaClientFocusDown(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTableWithInt(s, "FocusDirection", 1);
+    return 1;
+}
+
+fn luaClientFocusLeft(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTableWithInt(s, "FocusDirection", 2);
+    return 1;
+}
+
+fn luaClientFocusRight(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTableWithInt(s, "FocusDirection", 3);
+    return 1;
+}
+
 fn luaLayoutCycle(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     createActionTable(s, "CycleLayout");
@@ -664,6 +703,16 @@ fn luaTagViewNextNonempty(state: ?*c.lua_State) callconv(.c) c_int {
 fn luaTagViewPreviousNonempty(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     createActionTable(s, "ViewPreviousNonEmptyTag");
+    return 1;
+}
+
+fn luaTagWorkspaceSwitcher(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    if (c.lua_type(s, 1) == c.LUA_TSTRING) {
+        createActionTableWithString(s, "WorkspaceSwitcher");
+    } else {
+        createActionTable(s, "WorkspaceSwitcher");
+    }
     return 1;
 }
 
@@ -1407,6 +1456,8 @@ fn parseAction(name: []const u8) ?Action {
         .{ "TagMonitor", Action.send_to_monitor },
         .{ "ScrollLeft", Action.scroll_left },
         .{ "ScrollRight", Action.scroll_right },
+        .{ "FocusDirection", Action.focus_direction },
+        .{ "WorkspaceSwitcher", Action.workspace_switcher },
     };
 
     inline for (action_map) |entry| {

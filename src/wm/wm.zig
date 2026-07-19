@@ -11,6 +11,7 @@ const bar_mod = @import("../bar/bar.zig");
 const blocks_mod = @import("../bar/blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
 const overlay_mod = @import("../overlay.zig");
+const switcher_mod = @import("../switcher.zig");
 const animations = @import("../animations.zig");
 const tiling = @import("../layouts/tiling.zig");
 const monocle = @import("../layouts/monocle.zig");
@@ -83,6 +84,7 @@ pub const WindowManager = struct {
     chord: ChordState,
 
     overlay: ?*overlay_mod.KeybindOverlay,
+    switcher: ?*switcher_mod.WorkspaceSwitcher,
 
     scroll_animation: animations.ScrollAnimation,
     animation_config: animations.AnimationConfig,
@@ -128,6 +130,7 @@ pub const WindowManager = struct {
             .bars = null,
             .chord = .{},
             .overlay = null,
+            .switcher = null,
             .scroll_animation = .{},
             .animation_config = .{ .duration_ms = 150, .easing = .ease_out },
             .running = true,
@@ -149,6 +152,11 @@ pub const WindowManager = struct {
         if (self.overlay) |o| {
             o.deinit(self.allocator);
             self.overlay = null;
+        }
+
+        if (self.switcher) |s| {
+            s.deinit(self.allocator);
+            self.switcher = null;
         }
 
         var mon = self.monitors;
@@ -261,31 +269,20 @@ pub const WindowManager = struct {
 
             const new_count: usize = @intCast(nn);
 
-            for (n..new_count) |_| {
-                var last = self.monitors;
-                while (last) |mon| {
-                    if (mon.next == null) break;
-                    last = mon.next;
-                }
-                const new_mon = monitor_mod.create(self.allocator) orelse continue;
-                new_mon.lt[0] = &tiling.layout;
-                new_mon.lt[1] = &monocle.layout;
-                new_mon.lt[2] = &floating.layout;
-                new_mon.lt[3] = &scrolling.layout;
-                new_mon.lt[4] = &grid.layout;
-                new_mon.lt[5] = &dwindle.layout;
-                for (0..10) |i| {
-                    new_mon.pertag.ltidxs[i][0] = new_mon.lt[0];
-                    new_mon.pertag.ltidxs[i][1] = new_mon.lt[1];
-                    new_mon.pertag.ltidxs[i][2] = new_mon.lt[2];
-                    new_mon.pertag.ltidxs[i][3] = new_mon.lt[3];
-                    new_mon.pertag.ltidxs[i][4] = new_mon.lt[4];
-                    new_mon.pertag.ltidxs[i][5] = new_mon.lt[5];
-                }
-                if (last) |l| {
-                    l.next = new_mon;
-                } else {
-                    self.monitors = new_mon;
+            if (new_count > n) {
+                for (n..new_count) |_| {
+                    var last = self.monitors;
+                    while (last) |mon| {
+                        if (mon.next == null) break;
+                        last = mon.next;
+                    }
+                    const new_mon = monitor_mod.create(self.allocator) orelse continue;
+                    self.initMonitor(new_mon, 0, 0, 0, 0, 0);
+                    if (last) |l| {
+                        l.next = new_mon;
+                    } else {
+                        self.monitors = new_mon;
+                    }
                 }
             }
 
@@ -313,49 +310,53 @@ pub const WindowManager = struct {
                 m = mon.next;
             }
 
-            for (new_count..n) |_| {
-                var last: ?*Monitor = null;
-                var iter = self.monitors;
-                while (iter) |mon| {
-                    if (mon.next == null) {
-                        last = mon;
-                        break;
-                    }
-                    iter = mon.next;
-                }
-                const removed = last orelse continue;
-
-                while (removed.clients) |c| {
-                    dirty = true;
-                    removed.clients = c.next;
-                    client_mod.detachStack(c);
-                    c.monitor = self.monitors;
-                    client_mod.attachAside(c);
-                    client_mod.attachStack(c);
-                }
-
-                if (self.selected_monitor == removed) {
-                    self.selected_monitor = self.monitors;
-                }
-
-                var prev: ?*Monitor = null;
-                iter = self.monitors;
-                while (iter) |mon| {
-                    if (mon == removed) {
-                        if (prev) |p| {
-                            p.next = removed.next;
-                        } else {
-                            self.monitors = removed.next;
+            if (n > new_count) {
+                for (new_count..n) |_| {
+                    var last: ?*Monitor = null;
+                    var iter = self.monitors;
+                    while (iter) |mon| {
+                        if (mon.next == null) {
+                            last = mon;
+                            break;
                         }
-                        break;
+                        iter = mon.next;
                     }
-                    prev = mon;
-                    iter = mon.next;
+                    const removed = last orelse continue;
+
+                    while (removed.clients) |c| {
+                        dirty = true;
+                        removed.clients = c.next;
+                        client_mod.detachStack(c);
+                        c.monitor = self.monitors;
+                        client_mod.attachAside(c);
+                        client_mod.attachStack(c);
+                    }
+
+                    if (self.selected_monitor == removed) {
+                        self.selected_monitor = self.monitors;
+                    }
+
+                    var prev: ?*Monitor = null;
+                    iter = self.monitors;
+                    while (iter) |mon| {
+                        if (mon == removed) {
+                            if (prev) |p| {
+                                p.next = removed.next;
+                            } else {
+                                self.monitors = removed.next;
+                            }
+                            break;
+                        }
+                        prev = mon;
+                        iter = mon.next;
+                    }
+                    monitor_mod.destroy(self.allocator, removed);
                 }
-                monitor_mod.destroy(self.allocator, removed);
             }
 
-            tiling.setScreenSize(info[0].width, info[0].height);
+            if (new_count > 0) {
+                tiling.setScreenSize(info[0].width, info[0].height);
+            }
         } else {
             if (self.monitors == null) {
                 const mon = monitor_mod.create(self.allocator) orelse return false;
@@ -481,6 +482,13 @@ pub const WindowManager = struct {
 
     fn setupOverlay(self: *WindowManager) void {
         self.overlay = overlay_mod.KeybindOverlay.init(
+            self.display.handle,
+            self.display.screen,
+            self.display.root,
+            self.config.font,
+            self.allocator,
+        );
+        self.switcher = switcher_mod.WorkspaceSwitcher.init(
             self.display.handle,
             self.display.screen,
             self.display.root,

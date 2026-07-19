@@ -258,6 +258,12 @@ oxwm.key.bind({ modkey, "Shift" }, "R", oxwm.restart())
 oxwm.key.bind({ modkey }, "J", oxwm.client.focus_stack(1))
 oxwm.key.bind({ modkey }, "K", oxwm.client.focus_stack(-1))
 
+-- Focus by direction (spatial)
+oxwm.key.bind({ modkey }, "Up", oxwm.client.focus_up())
+oxwm.key.bind({ modkey }, "Down", oxwm.client.focus_down())
+oxwm.key.bind({ modkey }, "Left", oxwm.client.focus_left())
+oxwm.key.bind({ modkey }, "Right", oxwm.client.focus_right())
+
 -- Window movement (swap position in stack)
 oxwm.key.bind({ modkey, "Shift" }, "J", oxwm.client.move_stack(1))
 oxwm.key.bind({ modkey, "Shift" }, "K", oxwm.client.move_stack(-1))
@@ -335,6 +341,13 @@ oxwm.key.bind({ modkey, "Control", "Shift" }, "9", oxwm.tag.toggletag(8))
 -- oxwm.key.bind({ modkey, "Control", "Shift" }, "0", oxwm.tag.toggletag(9))
 -- oxwm.key.bind({ modkey, "Control", "Shift" }, "minus", oxwm.tag.toggletag(10))
 -- oxwm.key.bind({ modkey, "Control", "Shift" }, "equal", oxwm.tag.toggletag(11))
+
+-- Workspace switcher (Alt+Tab style grid of non-empty tags)
+-- Tab cycles forward, Shift+Tab cycles backward, Return validates, Escape cancels.
+-- The argument indicates the "master" modifier whose release also validates the
+-- selection (Windows-style). It must match the modifier used to trigger the
+-- keybind. Accepted values: "Mod1" / "Alt", "Mod4" / "Super", "Shift", "Ctrl".
+oxwm.key.bind({ "Mod1" }, "Tab", oxwm.tag.workspace_switcher("Mod1"))
 
 -------------------------------------------------------------------------------
 -- Advanced: Keychords
