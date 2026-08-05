@@ -7,6 +7,23 @@ pub fn build(b: *std.Build) void {
     const lua_dep = b.dependency("lua", .{});
     const lua_headers = lua_dep.path("src/");
 
+    const netbsd = target.result.os.tag == .netbsd;
+    const netbsd_headers: ?std.Build.LazyPath = if (netbsd) blk: {
+        const patch_cdefs = b.addSystemCommand(&.{
+            "sed",
+            "-e",
+            "s|_Pragma(\"GCC visibility push(default)\")||g",
+            "-e",
+            "s|_Pragma(\"GCC visibility push(hidden)\")||g",
+            "-e",
+            "s|_Pragma(\"GCC visibility pop\")||g",
+            "/usr/include/sys/cdefs.h",
+        });
+        const shim = b.addWriteFiles();
+        _ = shim.addCopyFile(patch_cdefs.captureStdOut(.{}), "sys/cdefs.h");
+        break :blk shim.getDirectory();
+    } else null;
+
     const exe = b.addExecutable(.{
         .name = "oxwm",
         .root_module = b.createModule(.{
@@ -25,7 +42,8 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("templates/config.lua"),
     });
 
-    exe.use_lld = false;
+    if (!netbsd) exe.use_lld = false;
+    if (netbsd_headers) |headers| exe.root_module.addIncludePath(headers);
 
     const lua = buildLua(b, lua_dep, target, optimize);
 
@@ -53,7 +71,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    unit_tests.use_lld = false;
+    if (!netbsd) unit_tests.use_lld = false;
     test_step.dependOn(&b.addRunArtifact(unit_tests).step);
 
     const src_main_unit_tests = b.addTest(.{
@@ -64,7 +82,8 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
-    src_main_unit_tests.use_lld = false;
+    if (!netbsd) src_main_unit_tests.use_lld = false;
+    if (netbsd_headers) |headers| src_main_unit_tests.root_module.addIncludePath(headers);
     src_main_unit_tests.root_module.addIncludePath(lua_headers);
     src_main_unit_tests.root_module.linkLibrary(lua);
     src_main_unit_tests.root_module.linkSystemLibrary("X11", .{});
@@ -81,13 +100,15 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
-    lua_config_tests.use_lld = false;
+    if (!netbsd) lua_config_tests.use_lld = false;
+    if (netbsd_headers) |headers| lua_config_tests.root_module.addIncludePath(headers);
     lua_config_tests.root_module.addIncludePath(lua_headers);
     const lua_config_module = b.createModule(.{
         .root_source_file = b.path("src/config/lua.zig"),
         .target = target,
         .optimize = optimize,
     });
+    if (netbsd_headers) |headers| lua_config_module.addIncludePath(headers);
     lua_config_module.addIncludePath(lua_headers);
     lua_config_tests.root_module.addImport("lua", lua_config_module);
     lua_config_tests.root_module.linkLibrary(lua);
