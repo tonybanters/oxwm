@@ -261,7 +261,7 @@ pub const WindowManager = struct {
 
             const new_count: usize = @intCast(nn);
 
-            for (n..new_count) |_| {
+            for (0..new_count -| n) |_| {
                 var last = self.monitors;
                 while (last) |mon| {
                     if (mon.next == null) break;
@@ -313,7 +313,7 @@ pub const WindowManager = struct {
                 m = mon.next;
             }
 
-            for (new_count..n) |_| {
+            for (0..n -| new_count) |_| {
                 var last: ?*Monitor = null;
                 var iter = self.monitors;
                 while (iter) |mon| {
