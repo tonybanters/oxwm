@@ -313,7 +313,7 @@ pub const WindowManager = struct {
                 m = mon.next;
             }
 
-            for (0..n -| new_count) |_| {
+            for (0..n -| @max(new_count, 1)) |_| {
                 var last: ?*Monitor = null;
                 var iter = self.monitors;
                 while (iter) |mon| {
@@ -325,18 +325,7 @@ pub const WindowManager = struct {
                 }
                 const removed = last orelse continue;
 
-                while (removed.clients) |c| {
-                    dirty = true;
-                    removed.clients = c.next;
-                    client_mod.detachStack(c);
-                    c.monitor = self.monitors;
-                    client_mod.attachAside(c);
-                    client_mod.attachStack(c);
-                }
-
-                if (self.selected_monitor == removed) {
-                    self.selected_monitor = self.monitors;
-                }
+                dirty = true;
 
                 var prev: ?*Monitor = null;
                 iter = self.monitors;
@@ -352,6 +341,22 @@ pub const WindowManager = struct {
                     prev = mon;
                     iter = mon.next;
                 }
+
+                if (self.selected_monitor == removed) {
+                    self.selected_monitor = self.monitors;
+                }
+
+                if (self.monitors) |target| {
+                    while (removed.clients) |c| {
+                        removed.clients = c.next;
+                        client_mod.detachStack(c);
+                        c.monitor = target;
+                        c.tags = target.tagset[target.sel_tags];
+                        client_mod.attachAside(c);
+                        client_mod.attachStack(c);
+                    }
+                }
+
                 monitor_mod.destroy(self.allocator, removed);
             }
 
