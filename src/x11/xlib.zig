@@ -22,6 +22,11 @@ pub const XCrossingEvent = c.XCrossingEvent;
 pub const XFocusChangeEvent = c.XFocusChangeEvent;
 pub const XErrorEvent = c.XErrorEvent;
 pub const KeySym = c.KeySym;
+pub const XMatchVisualInfo = c.XMatchVisualInfo;
+pub const XVisualInfo = c.XVisualInfo;
+pub const XA_VISUALID = c.XA_VISUALID;
+pub const VisualID = c.VisualID;
+pub const TrueColor = c.TrueColor;
 
 pub const XOpenDisplay = c.XOpenDisplay;
 pub const XCloseDisplay = c.XCloseDisplay;
