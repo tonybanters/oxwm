@@ -191,6 +191,12 @@ Default keybindings (fully customizable in =~/.config/oxwm/config.lua=):
 | Super+Shift+/          | Show keybinds overlay             |
 | Super+Button1 (drag)   | Move window (floating)            |
 | Super+Button3 (drag)   | Resize window (floating)          |
+| XF86AudioRaiseVolume   | Volume up (pactl +5%)             |
+| XF86AudioLowerVolume   | Volume down (pactl -5%)           |
+| XF86AudioMute          | Toggle mute (pactl)               |
+| XF86AudioPlay          | Play/Pause (playerctl)            |
+| XF86AudioNext          | Next track (playerctl)            |
+| XF86AudioPrev          | Previous track (playerctl)        |
 
 * Features
 - *Dynamic Tiling Layout* with adjustable master/stack split

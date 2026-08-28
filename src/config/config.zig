@@ -273,6 +273,12 @@ pub fn initializeDefaultConfig(cfg: *Config) void {
     cfg.addKeybind(makeKeybindStr(mod_key, 'd', .spawn, "rofi -show drun")) catch {};
     cfg.addKeybind(makeKeybindStr(mod_key, 's', .spawn, "maim -s | xclip -selection clipboard -t image/png")) catch {};
     cfg.addKeybind(makeKeybind(mod_key, 'q', .kill_client)) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff13, .spawn, "pactl set-sink-volume @DEFAULT_SINK@ +5%")) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff11, .spawn, "pactl set-sink-volume @DEFAULT_SINK@ -5%")) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff12, .spawn, "pactl set-sink-mute @DEFAULT_SINK@ toggle")) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff14, .spawn, "playerctl play-pause")) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff17, .spawn, "playerctl next")) catch {};
+    cfg.addKeybind(makeKeybindStr(0, 0x1008ff16, .spawn, "playerctl previous")) catch {};
     cfg.addKeybind(makeKeybind(mod_key | shift_key, 'q', .quit)) catch {};
     cfg.addKeybind(makeKeybind(mod_key | shift_key, 'r', .reload_config)) catch {};
     cfg.addKeybind(makeKeybind(mod_key, 'j', .focus_next)) catch {};
