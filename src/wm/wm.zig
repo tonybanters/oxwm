@@ -781,5 +781,9 @@ pub fn configBlockToBarBlock(cfg: config_mod.Block) blocks_mod.Block {
         .systray => blocks_mod.Block.initStatic("", 0, false),
     };
     block.click = cfg.click;
+    block.left_click = cfg.left_click;
+    block.right_click = cfg.right_click;
+    block.scroll_up = cfg.scroll_up;
+    block.scroll_down = cfg.scroll_down;
     return block;
 }
