@@ -105,6 +105,26 @@ pub const Bar = struct {
             0x1a1b26,
         );
 
+        var class_hint: xlib.XClassHint = undefined;
+        const instance_name = "oxwm-bar\x00";
+        const class_name = "Oxwm-bar\x00";
+        class_hint.res_name = @constCast(instance_name.ptr);
+        class_hint.res_class = @constCast(class_name.ptr);
+        _ = xlib.c.XSetClassHint(display, window, &class_hint);
+
+        const net_wm_window_type = xlib.XInternAtom(display, "_NET_WM_WINDOW_TYPE", xlib.False);
+        const net_wm_window_type_dock = xlib.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DOCK", xlib.False);
+        _ = xlib.XChangeProperty(
+            display,
+            window,
+            net_wm_window_type,
+            xlib.XA_ATOM,
+            32,
+            xlib.PropModeReplace,
+            @ptrCast(&net_wm_window_type_dock),
+            1,
+        );
+
         var attributes: xlib.c.XSetWindowAttributes = undefined;
         attributes.override_redirect = xlib.True;
         attributes.event_mask = xlib.c.ExposureMask | xlib.c.ButtonPressMask;
