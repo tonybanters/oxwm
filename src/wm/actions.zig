@@ -440,6 +440,18 @@ pub fn setLayoutIndex(index: u32, wm: *WindowManager) void {
     }
 }
 
+pub fn setAttachMethod(attach_method_name: ?[]const u8, wm: *WindowManager) void {
+    const monitor = wm.selected_monitor orelse return;
+    const name = attach_method_name orelse return;
+    const new_att_m: u32 = if (config_mod.AttachMethods.fromString(name)) |value|
+        @intFromEnum(value)
+    else {
+        std.debug.print("set_attach_method: unknown attach method '{s}'\n", .{name});
+        return;
+    };
+    monitor.att_m = new_att_m;
+}
+
 fn warpCursorToMonitor(monitor: *Monitor, wm: *WindowManager) void {
     const center_x = monitor.win_x + @divTrunc(monitor.win_w, 2);
     const center_y = monitor.win_y + @divTrunc(monitor.win_h, 2);
@@ -832,6 +844,7 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         .set_layout => setLayout(str_arg, wm),
         .set_layout_tiling => setLayoutIndex(0, wm),
         .set_layout_floating => setLayoutIndex(2, wm),
+        .set_attach_method => setAttachMethod(str_arg, wm),
         .view_tag => {
             const tag_mask: u32 = @as(u32, 1) << @intCast(int_arg);
             core.view(tag_mask, wm);

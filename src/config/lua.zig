@@ -324,6 +324,9 @@ fn registerMiscFunctions(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaSetLayoutSymbol);
     c.lua_setfield(state, -2, "set_layout_symbol");
 
+    c.lua_pushcfunction(state, luaSetAttachMethod);
+    c.lua_setfield(state, -2, "set_attach_method");
+
     c.lua_pushcfunction(state, luaAutostart);
     c.lua_setfield(state, -2, "autostart");
 
@@ -633,6 +636,12 @@ fn luaLayoutScrollLeft(state: ?*c.lua_State) callconv(.c) c_int {
 fn luaLayoutScrollRight(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     createActionTable(s, "ScrollRight");
+    return 1;
+}
+
+fn luaAttachMethodSet(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    createActionTableWithString(s, "ChangeAttachMethod");
     return 1;
 }
 
@@ -1095,6 +1104,20 @@ fn luaSetLayout(state: ?*c.lua_State) callconv(.c) c_int {
     return 0;
 }
 
+fn luaSetAttachMethod(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    const name = getStringArg(s, 1) orelse return 0;
+    if (config_mod.AttachMethods.fromString(name) == null) {
+        std.debug.print("set_attach_method: unknown attach method '{s}'\n", .{name});
+        return 0;
+    }
+    if (dupeLuaString(s, 1)) |attach_method| {
+        cfg.attach_method = attach_method;
+    }
+    return 0;
+}
+
 fn luaSetModkey(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
@@ -1395,6 +1418,7 @@ fn parseAction(name: []const u8) ?Action {
         .{ "ToggleBar", Action.toggle_bar },
         .{ "CycleLayout", Action.cycle_layout },
         .{ "ChangeLayout", Action.set_layout },
+        .{ "ChangeAttachMethod", Action.set_attach_method },
         .{ "ViewTag", Action.view_tag },
         .{ "ViewNextTag", Action.view_next_tag },
         .{ "ViewPreviousTag", Action.view_prev_tag },

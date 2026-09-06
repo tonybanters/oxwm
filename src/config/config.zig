@@ -23,6 +23,7 @@ pub const Action = enum {
     set_layout,
     set_layout_tiling,
     set_layout_floating,
+    set_attach_method,
     view_tag,
     view_next_tag,
     view_prev_tag,
@@ -98,6 +99,24 @@ pub const Layouts = enum(u32) {
         if (std.mem.eql(u8, name, "scroll")) return .scrolling;
         if (std.mem.eql(u8, name, "fib")) return .dwindle;
         if (std.mem.eql(u8, name, "fibonacci")) return .dwindle;
+        return null;
+    }
+};
+
+pub const AttachMethods = enum(u32) {
+    aside,
+    top,
+    bottom,
+    above,
+    below,
+
+    pub fn fromString(name: []const u8) ?AttachMethods {
+        if (std.meta.stringToEnum(AttachMethods, name)) |v| return v;
+        if (std.mem.eql(u8, name, "aside")) return .aside;
+        if (std.mem.eql(u8, name, "top")) return .top;
+        if (std.mem.eql(u8, name, "bottom")) return .bottom;
+        if (std.mem.eql(u8, name, "above")) return .above;
+        if (std.mem.eql(u8, name, "below")) return .below;
         return null;
     }
 };
@@ -187,6 +206,7 @@ pub const Config = struct {
     tags: [12][]const u8 = .{ "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" },
     tag_count: u32 = 9,
     layout: []const u8 = "tiling",
+    attach_method: []const u8 = "aside",
     tag_layouts: [12]?[]const u8 = .{null} ** 12,
 
     border_width: i32 = 2,

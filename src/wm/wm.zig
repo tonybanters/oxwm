@@ -194,6 +194,10 @@ pub const WindowManager = struct {
             mon.sel_lt = @intFromEnum(value);
         }
 
+        if (config_mod.AttachMethods.fromString(self.config.attach_method)) |value| {
+            mon.att_m = @intFromEnum(value);
+        }
+
         for (0..10) |i| {
             for (0..layouts.len) |j| {
                 mon.pertag.ltidxs[i][j] = mon.lt[j];

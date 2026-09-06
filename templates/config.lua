@@ -129,6 +129,11 @@ oxwm.set_layout_symbol("tabbed", "[=]")
 -- Unset value uses oxwm.set_layout value
 -- oxwm.set_tag_layout(1, "grid")
 
+-- Set the default attach method, similar to the patches from dwm
+-- Available methods: "aside" (default), "top", "bottom", "above", "below"
+-- For example "above" makes new clients appear above the currently selected one
+oxwm.set_attach_method("top")
+
 -------------------------------------------------------------------------------
 -- Appearance
 -------------------------------------------------------------------------------
