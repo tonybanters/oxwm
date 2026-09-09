@@ -132,7 +132,7 @@ oxwm.set_layout_symbol("tabbed", "[=]")
 -- Set the default attach method, similar to the patches from dwm
 -- Available methods: "aside" (default), "top", "bottom", "above", "below"
 -- For example "above" makes new clients appear above the currently selected one
-oxwm.set_attach_method("top")
+oxwm.set_attach_method("aside")
 
 -------------------------------------------------------------------------------
 -- Appearance
