@@ -90,7 +90,7 @@ pub fn manage(win: xlib.Window, window_attrs: *xlib.XWindowAttributes, wm: *Wind
         _ = xlib.XRaiseWindow(wm.display.handle, client.window);
     }
 
-    attach(client, monitor.att_m);
+    attach(client, wm.attach_method);
     client_mod.attachStack(client);
 
     _ = xlib.XChangeProperty(wm.display.handle, wm.display.root, wm.atoms.net_client_list, xlib.XA_WINDOW, 32, xlib.PropModeAppend, @ptrCast(&client.window), 1);

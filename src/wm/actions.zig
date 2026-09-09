@@ -441,7 +441,6 @@ pub fn setLayoutIndex(index: u32, wm: *WindowManager) void {
 }
 
 pub fn setAttachMethod(attach_method_name: ?[]const u8, wm: *WindowManager) void {
-    const monitor = wm.selected_monitor orelse return;
     const name = attach_method_name orelse return;
     const new_att_m: u32 = if (config_mod.AttachMethods.fromString(name)) |value|
         @intFromEnum(value)
@@ -449,7 +448,7 @@ pub fn setAttachMethod(attach_method_name: ?[]const u8, wm: *WindowManager) void
         std.debug.print("set_attach_method: unknown attach method '{s}'\n", .{name});
         return;
     };
-    monitor.att_m = new_att_m;
+    wm.attach_method = new_att_m;
 }
 
 fn warpCursorToMonitor(monitor: *Monitor, wm: *WindowManager) void {

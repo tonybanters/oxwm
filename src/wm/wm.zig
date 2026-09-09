@@ -77,6 +77,8 @@ pub const WindowManager = struct {
     /// The monitor that currently has input focus.
     selected_monitor: ?*Monitor,
 
+    attach_method: u32,
+
     /// Head of the linked list of status bars (one per monitor).
     bars: ?*Bar,
 
@@ -125,6 +127,7 @@ pub const WindowManager = struct {
             .config_path = config_path,
             .monitors = null,
             .selected_monitor = null,
+            .attach_method = @intFromEnum(config_mod.AttachMethods.fromString(config.attach_method) orelse config_mod.AttachMethods.aside),
             .bars = null,
             .chord = .{},
             .overlay = null,
@@ -192,10 +195,6 @@ pub const WindowManager = struct {
 
         if (config_mod.Layouts.fromString(self.config.layout)) |value| {
             mon.sel_lt = @intFromEnum(value);
-        }
-
-        if (config_mod.AttachMethods.fromString(self.config.attach_method)) |value| {
-            mon.att_m = @intFromEnum(value);
         }
 
         for (0..10) |i| {
@@ -721,6 +720,8 @@ pub const WindowManager = struct {
         self.config.blocks.clearRetainingCapacity();
 
         loadFn(self);
+
+        self.attach_method = @intFromEnum(config_mod.AttachMethods.fromString(self.config.attach_method) orelse config_mod.AttachMethods.aside);
 
         bar_mod.destroyBars(self.bars, self.display.handle);
         self.bars = null;

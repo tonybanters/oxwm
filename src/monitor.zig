@@ -41,7 +41,6 @@ pub const Monitor = struct {
     scroll_offset: i32 = 0,
     sel_tags: u32 = 0,
     sel_lt: u32 = 0,
-    att_m: u32 = 0,
     tagset: [2]u32 = .{ 1, 1 },
     show_bar: bool = true,
     top_bar: bool = true,
