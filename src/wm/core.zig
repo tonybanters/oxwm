@@ -90,7 +90,7 @@ pub fn manage(win: xlib.Window, window_attrs: *xlib.XWindowAttributes, wm: *Wind
         _ = xlib.XRaiseWindow(wm.display.handle, client.window);
     }
 
-    attach(client, wm.attach_method);
+    client_mod.attachWith(client, wm.config.attach_method);
     client_mod.attachStack(client);
 
     _ = xlib.XChangeProperty(wm.display.handle, wm.display.root, wm.atoms.net_client_list, xlib.XA_WINDOW, 32, xlib.PropModeAppend, @ptrCast(&client.window), 1);
@@ -265,19 +265,6 @@ pub fn arrange(monitor: *Monitor, wm: *WindowManager) void {
         }
     }
     restack(monitor, wm);
-}
-
-pub fn attach(client: *Client, att_m: u32) void {
-    switch (att_m) {
-        @intFromEnum(config_mod.AttachMethods.aside) => client_mod.attachAside(client),
-        @intFromEnum(config_mod.AttachMethods.top) => client_mod.attachTop(client),
-        @intFromEnum(config_mod.AttachMethods.bottom) => client_mod.attachBottom(client),
-        @intFromEnum(config_mod.AttachMethods.above) => client_mod.attachAbove(client),
-        @intFromEnum(config_mod.AttachMethods.below) => client_mod.attachBelow(client),
-        else => {
-            std.debug.print("No attach method found! Value: {}\n", .{att_m});
-        },
-    }
 }
 
 pub fn showhide(monitor: *Monitor, wm: *WindowManager) void {

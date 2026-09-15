@@ -1,6 +1,7 @@
 const std = @import("std");
 const xlib = @import("x11/xlib.zig");
 const Monitor = @import("monitor.zig").Monitor;
+const AttachMethods = @import("config/config.zig").AttachMethods;
 
 pub const Client = struct {
     name: [256]u8 = std.mem.zeroes([256]u8),
@@ -151,21 +152,23 @@ pub fn nextTagged(client: *Client) ?*Client {
 pub fn lastTagged(client: *Client) ?*Client {
     const monitor = client.monitor orelse return null;
     var walked = monitor.clients;
-    var last_tiled: u32 = 0;
-    var i: u32 = 0;
+    var last: ?*Client = null;
     while (walked) |iter| {
-        if (!iter.is_floating and isVisibleOnTag(iter, client.tags))
-            last_tiled = i;
+        if (!iter.is_floating and isVisibleOnTag(iter, client.tags)) last = iter;
         walked = iter.next;
-        i += 1;
     }
-    walked = monitor.clients;
-    i = 0;
-    while (i < last_tiled) {
-        walked = walked.?.next;
-        i += 1;
+    return last;
+}
+
+/// Inserts `client` into its monitor's client list using `method`.
+pub fn attachWith(client: *Client, method: AttachMethods) void {
+    switch (method) {
+        .aside => attachAside(client),
+        .top => attach(client),
+        .bottom => attachBottom(client),
+        .above => attachAbove(client),
+        .below => attachBelow(client),
     }
-    return walked;
 }
 
 /// Inserts `client` just after the first client that shares its tags,
@@ -180,43 +183,45 @@ pub fn attachAside(client: *Client) void {
     at.?.next = client;
 }
 
-/// Inserts `client` at the top of the client stack.
-pub fn attachTop(client: *Client) void {
-    client.next = client.monitor.?.clients;
-    client.monitor.?.clients = client;
-}
-
-/// Inserts `client` at the bottom of the client stack.
+/// Inserts `client` just after the last client that shares its tags,
+/// falling back to prepend if none exists.
 pub fn attachBottom(client: *Client) void {
-    const last = lastTagged(client);
-    if (last == null) {
+    const last = lastTagged(client) orelse {
         attach(client);
         return;
-    }
-    client.next = null;
-    last.?.next = client;
+    };
+    client.next = last.next;
+    last.next = client;
 }
 
-/// Inserts `client` above the selected client,
-/// falling back to prepend if none exists.
+/// Inserts `client` just before the selected client, falling back to
+/// prepend if there is no selection or the selection is floating.
 pub fn attachAbove(client: *Client) void {
     const monitor = client.monitor orelse return;
-    if (monitor.sel == null) {
+    const sel = monitor.sel orelse {
+        attach(client);
+        return;
+    };
+    if (sel == client or sel.is_floating) {
         attach(client);
         return;
     }
-    insertBefore(client, monitor.sel orelse return);
+    insertBefore(client, sel);
 }
 
-/// Inserts `client` below the selected client,
-/// falling back to prepend if none exists.
+/// Inserts `client` just after the selected client, falling back to
+/// prepend if there is no selection or the selection is floating.
 pub fn attachBelow(client: *Client) void {
     const monitor = client.monitor orelse return;
-    if (monitor.sel == null) {
+    const sel = monitor.sel orelse {
+        attach(client);
+        return;
+    };
+    if (sel == client or sel.is_floating) {
         attach(client);
         return;
     }
-    insertAfter(client, monitor.sel orelse return);
+    insertAfter(client, sel);
 }
 
 /// Counts non-floating, visible clients on `monitor`.
@@ -285,21 +290,8 @@ pub fn insertAfter(client: *Client, target: *Client) void {
 
     detach(client);
 
-    if (monitor.clients == target) {
-        client.next = target.next;
-        monitor.clients.?.next = client;
-        return;
-    }
-
-    var current = monitor.clients;
-    while (current) |iter| {
-        if (iter.next == target) {
-            client.next = target.next;
-            iter.next.?.next = client;
-            return;
-        }
-        current = iter.next;
-    }
+    client.next = target.next;
+    target.next = client;
 }
 
 /// Swaps the positions of `client_a` and `client_b` in their shared monitor's

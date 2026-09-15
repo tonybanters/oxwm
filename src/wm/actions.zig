@@ -440,17 +440,6 @@ pub fn setLayoutIndex(index: u32, wm: *WindowManager) void {
     }
 }
 
-pub fn setAttachMethod(attach_method_name: ?[]const u8, wm: *WindowManager) void {
-    const name = attach_method_name orelse return;
-    const new_att_m: u32 = if (config_mod.AttachMethods.fromString(name)) |value|
-        @intFromEnum(value)
-    else {
-        std.debug.print("set_attach_method: unknown attach method '{s}'\n", .{name});
-        return;
-    };
-    wm.attach_method = new_att_m;
-}
-
 fn warpCursorToMonitor(monitor: *Monitor, wm: *WindowManager) void {
     const center_x = monitor.win_x + @divTrunc(monitor.win_w, 2);
     const center_y = monitor.win_y + @divTrunc(monitor.win_h, 2);
@@ -485,7 +474,7 @@ pub fn sendmon(direction: i32, wm: *WindowManager) void {
     client_mod.detachStack(client);
     client.monitor = target;
     client.tags = target.tagset[target.sel_tags];
-    client_mod.attachAside(client);
+    client_mod.attachWith(client, wm.config.attach_method);
     client_mod.attachStack(client);
 
     core.focusTopClient(source_monitor, wm);
@@ -602,7 +591,7 @@ pub fn movemouse(wm: *WindowManager) void {
         client_mod.detachStack(client);
         client.monitor = new_mon;
         client.tags = new_mon.?.tagset[new_mon.?.sel_tags];
-        client_mod.attachAside(client);
+        client_mod.attachWith(client, wm.config.attach_method);
         client_mod.attachStack(client);
         wm.selected_monitor = new_mon;
         core.focus(client, wm);
@@ -843,7 +832,6 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         .set_layout => setLayout(str_arg, wm),
         .set_layout_tiling => setLayoutIndex(0, wm),
         .set_layout_floating => setLayoutIndex(2, wm),
-        .set_attach_method => setAttachMethod(str_arg, wm),
         .view_tag => {
             const tag_mask: u32 = @as(u32, 1) << @intCast(int_arg);
             core.view(tag_mask, wm);
