@@ -102,6 +102,18 @@ pub const Layouts = enum(u32) {
     }
 };
 
+pub const AttachMethods = enum {
+    aside,
+    top,
+    bottom,
+    above,
+    below,
+
+    pub fn fromString(name: []const u8) ?AttachMethods {
+        return std.meta.stringToEnum(AttachMethods, name);
+    }
+};
+
 pub const MouseButton = struct {
     click: ClickTarget,
     mod_mask: u32,
@@ -187,6 +199,7 @@ pub const Config = struct {
     tags: [12][]const u8 = .{ "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" },
     tag_count: u32 = 9,
     layout: []const u8 = "tiling",
+    attach_method: AttachMethods = .aside,
     tag_layouts: [12]?[]const u8 = .{null} ** 12,
 
     border_width: i32 = 2,

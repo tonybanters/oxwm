@@ -474,7 +474,7 @@ pub fn sendmon(direction: i32, wm: *WindowManager) void {
     client_mod.detachStack(client);
     client.monitor = target;
     client.tags = target.tagset[target.sel_tags];
-    client_mod.attachAside(client);
+    client_mod.attachWith(client, wm.config.attach_method);
     client_mod.attachStack(client);
 
     core.focusTopClient(source_monitor, wm);
@@ -591,7 +591,7 @@ pub fn movemouse(wm: *WindowManager) void {
         client_mod.detachStack(client);
         client.monitor = new_mon;
         client.tags = new_mon.?.tagset[new_mon.?.sel_tags];
-        client_mod.attachAside(client);
+        client_mod.attachWith(client, wm.config.attach_method);
         client_mod.attachStack(client);
         wm.selected_monitor = new_mon;
         core.focus(client, wm);

@@ -1,6 +1,7 @@
 const std = @import("std");
 const xlib = @import("x11/xlib.zig");
 const Monitor = @import("monitor.zig").Monitor;
+const AttachMethods = @import("config/config.zig").AttachMethods;
 
 pub const Client = struct {
     name: [256]u8 = std.mem.zeroes([256]u8),
@@ -146,6 +147,30 @@ pub fn nextTagged(client: *Client) ?*Client {
     return null;
 }
 
+/// Returns the last non-floating client on `client`'s monitor that shares
+/// any tag with `client`. Used for `attach_bottom` ordering.
+pub fn lastTagged(client: *Client) ?*Client {
+    const monitor = client.monitor orelse return null;
+    var walked = monitor.clients;
+    var last: ?*Client = null;
+    while (walked) |iter| {
+        if (!iter.is_floating and isVisibleOnTag(iter, client.tags)) last = iter;
+        walked = iter.next;
+    }
+    return last;
+}
+
+/// Inserts `client` into its monitor's client list using `method`.
+pub fn attachWith(client: *Client, method: AttachMethods) void {
+    switch (method) {
+        .aside => attachAside(client),
+        .top => attach(client),
+        .bottom => attachBottom(client),
+        .above => attachAbove(client),
+        .below => attachBelow(client),
+    }
+}
+
 /// Inserts `client` just after the first client that shares its tags,
 /// falling back to prepend if none exists.
 pub fn attachAside(client: *Client) void {
@@ -156,6 +181,47 @@ pub fn attachAside(client: *Client) void {
     }
     client.next = at.?.next;
     at.?.next = client;
+}
+
+/// Inserts `client` just after the last client that shares its tags,
+/// falling back to prepend if none exists.
+pub fn attachBottom(client: *Client) void {
+    const last = lastTagged(client) orelse {
+        attach(client);
+        return;
+    };
+    client.next = last.next;
+    last.next = client;
+}
+
+/// Inserts `client` just before the selected client, falling back to
+/// prepend if there is no selection or the selection is floating.
+pub fn attachAbove(client: *Client) void {
+    const monitor = client.monitor orelse return;
+    const sel = monitor.sel orelse {
+        attach(client);
+        return;
+    };
+    if (sel == client or sel.is_floating) {
+        attach(client);
+        return;
+    }
+    insertBefore(client, sel);
+}
+
+/// Inserts `client` just after the selected client, falling back to
+/// prepend if there is no selection or the selection is floating.
+pub fn attachBelow(client: *Client) void {
+    const monitor = client.monitor orelse return;
+    const sel = monitor.sel orelse {
+        attach(client);
+        return;
+    };
+    if (sel == client or sel.is_floating) {
+        attach(client);
+        return;
+    }
+    insertAfter(client, sel);
 }
 
 /// Counts non-floating, visible clients on `monitor`.
@@ -214,6 +280,18 @@ pub fn insertBefore(client: *Client, target: *Client) void {
         }
         current = iter.next;
     }
+}
+
+/// Moves `client` to just after `target` in the monitor's client list.
+/// Does nothing if they are on different monitors.
+pub fn insertAfter(client: *Client, target: *Client) void {
+    const monitor = target.monitor orelse return;
+    if (client.monitor != monitor) return;
+
+    detach(client);
+
+    client.next = target.next;
+    target.next = client;
 }
 
 /// Swaps the positions of `client_a` and `client_b` in their shared monitor's
