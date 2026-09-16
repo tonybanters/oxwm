@@ -40,6 +40,8 @@ oxwm.bar.set_hide_vacant_tags(false);
 oxwm.set_layout_symbol("tiling", "[T]")
 oxwm.set_layout_symbol("normie", "[F]")
 
+oxwm.set_attach_method("top")
+
 oxwm.border.set_width(2)
 oxwm.border.set_focused_color(colors.blue)
 oxwm.border.set_unfocused_color(colors.grey)

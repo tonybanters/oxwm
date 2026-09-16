@@ -324,6 +324,9 @@ fn registerMiscFunctions(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaSetLayoutSymbol);
     c.lua_setfield(state, -2, "set_layout_symbol");
 
+    c.lua_pushcfunction(state, luaSetAttachMethod);
+    c.lua_setfield(state, -2, "set_attach_method");
+
     c.lua_pushcfunction(state, luaAutostart);
     c.lua_setfield(state, -2, "autostart");
 
@@ -1092,6 +1095,17 @@ fn luaSetLayout(state: ?*c.lua_State) callconv(.c) c_int {
     if (dupeLuaString(s, 1)) |layout| {
         cfg.layout = layout;
     }
+    return 0;
+}
+
+fn luaSetAttachMethod(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    const name = getStringArg(s, 1) orelse return 0;
+    cfg.attach_method = config_mod.AttachMethods.fromString(name) orelse {
+        std.debug.print("set_attach_method: unknown attach method '{s}'\n", .{name});
+        return 0;
+    };
     return 0;
 }
 

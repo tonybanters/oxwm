@@ -59,6 +59,10 @@ function oxwm.set_layout(name) end
 ---@param name string Layout name ("tiling", "floating", "scrolling", "grid", "monocle", "dwindle", or aliases)
 function oxwm.set_tag_layout(tag, name) end
 
+---Set default attach method
+---@param name string Attach Method name ("aside", "top", "bottom", "above", "below")
+function oxwm.set_attach_method(name) end
+
 ---Set floating window spawn position
 ---@param position string Position ("center", "top-left", "top-right", "bottom-left", "bottom-right", "top-center", "bottom-center", "center-left", "center-right", or underscore variants)
 function oxwm.set_floating_position(position) end

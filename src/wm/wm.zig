@@ -352,7 +352,7 @@ pub const WindowManager = struct {
                         client_mod.detachStack(c);
                         c.monitor = target;
                         c.tags = target.tagset[target.sel_tags];
-                        client_mod.attachAside(c);
+                        client_mod.attachWith(c, self.config.attach_method);
                         client_mod.attachStack(c);
                     }
                 }
