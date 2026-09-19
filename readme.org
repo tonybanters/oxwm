@@ -56,7 +56,7 @@ sudo pacman -S zig libx11 libxft freetype2 fontconfig libxinerama
 See Build from source
 
 ** Building from Source
-Note, on many BSD systems, the zig compiler will agressively attempt to remove debug symbols which is causing a known linker issue. Please use this method on BSD:
+Note, on many BSD systems, the zig compiler will aggressively attempt to remove debug symbols which is causing a known linker issue. Please use this method on BSD:
 
 #+begin_src sh
 git clone https://github.com/tonybanters/oxwm
@@ -335,7 +335,7 @@ The tiling layout divides the screen into a master area (left half) and stack ar
   - Should work bidirectionally
 * Development Roadmap
 ** Current Focus (v0.11.3)
-- Implement featuers such as systray to make the bar more robust.
+- Implement features such as systray to make the bar more robust.
 - Improving core window management reliability
 - Maintaining Lua config and bar features while simplifying internals
 
