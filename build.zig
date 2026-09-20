@@ -7,35 +7,27 @@ pub fn build(b: *std.Build) void {
     const lua_dep = b.dependency("lua", .{});
     const lua_headers = lua_dep.path("src/");
 
-    const exe = b.addExecutable(.{
-        .name = "oxwm",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
-            .target = target,
-            .optimize = optimize,
-            .link_libc = true,
-        }),
-    });
-
-    const exe_options = b.addOptions();
-    exe_options.addOption([]const u8, "version", zon.version);
-    exe.root_module.addOptions("build_options", exe_options);
-
-    exe.root_module.addAnonymousImport("templates/config.lua", .{
-        .root_source_file = b.path("templates/config.lua"),
-    });
-
-    exe.use_lld = false;
+    const no_gestures = b.option(bool, "no_gestures", "Build without libinput touchpad gestures (implied on BSD targets)") orelse false;
+    const gestures = !no_gestures and !isBsd(target.result.os.tag);
 
     const lua = buildLua(b, lua_dep, target, optimize);
 
-    exe.root_module.linkLibrary(lua);
-    exe.root_module.linkSystemLibrary("X11", .{});
-    exe.root_module.linkSystemLibrary("Xinerama", .{});
-    exe.root_module.linkSystemLibrary("Xft", .{});
-    exe.root_module.linkSystemLibrary("fontconfig", .{});
+    const exe_options = b.addOptions();
+    exe_options.addOption([]const u8, "version", zon.version);
+    exe_options.addOption(bool, "gestures", gestures);
 
+    const exe = addOxwm(b, target, optimize, lua, exe_options, gestures);
     b.installArtifact(exe);
+
+    const bsd_options = b.addOptions();
+    bsd_options.addOption([]const u8, "version", zon.version);
+    bsd_options.addOption(bool, "gestures", false);
+    const bsd_exe = addOxwm(b, target, optimize, lua, bsd_options, false);
+    const bsd_install = b.addInstallArtifact(bsd_exe, .{});
+    for ([_][]const u8{ "openbsd", "freebsd", "netbsd", "bsd" }) |name| {
+        const bsd_step = b.step(name, "Build oxwm without Linux-only features (libinput gestures)");
+        bsd_step.dependOn(&bsd_install.step);
+    }
 
     const run_step = b.step("run", "Run oxwm");
     const run_cmd = b.addRunArtifact(exe);
@@ -71,6 +63,11 @@ pub fn build(b: *std.Build) void {
     src_main_unit_tests.root_module.linkSystemLibrary("Xinerama", .{});
     src_main_unit_tests.root_module.linkSystemLibrary("Xft", .{});
     src_main_unit_tests.root_module.linkSystemLibrary("fontconfig", .{});
+    src_main_unit_tests.root_module.addOptions("build_options", exe_options);
+    if (gestures) {
+        src_main_unit_tests.root_module.linkSystemLibrary("libinput", .{});
+        src_main_unit_tests.root_module.linkSystemLibrary("libudev", .{});
+    }
     test_step.dependOn(&b.addRunArtifact(src_main_unit_tests).step);
 
     const lua_config_tests = b.addTest(.{
@@ -136,6 +133,50 @@ pub fn build(b: *std.Build) void {
             "rm -rf /usr/share/oxwm && " ++
             "echo 'oxwm uninstalled (config at ~/.config/oxwm preserved)'",
     }).step);
+}
+
+fn isBsd(tag: std.Target.Os.Tag) bool {
+    return switch (tag) {
+        .freebsd, .openbsd, .netbsd, .dragonfly => true,
+        else => false,
+    };
+}
+
+fn addOxwm(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    lua: *std.Build.Step.Compile,
+    options: *std.Build.Step.Options,
+    gestures: bool,
+) *std.Build.Step.Compile {
+    const exe = b.addExecutable(.{
+        .name = "oxwm",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        }),
+    });
+
+    exe.root_module.addOptions("build_options", options);
+    exe.root_module.addAnonymousImport("templates/config.lua", .{
+        .root_source_file = b.path("templates/config.lua"),
+    });
+
+    exe.use_lld = false;
+
+    exe.root_module.linkLibrary(lua);
+    exe.root_module.linkSystemLibrary("X11", .{});
+    exe.root_module.linkSystemLibrary("Xinerama", .{});
+    exe.root_module.linkSystemLibrary("Xft", .{});
+    exe.root_module.linkSystemLibrary("fontconfig", .{});
+    if (gestures) {
+        exe.root_module.linkSystemLibrary("libinput", .{});
+        exe.root_module.linkSystemLibrary("libudev", .{});
+    }
+    return exe;
 }
 
 fn addXephyrRun(b: *std.Build, exe: *std.Build.Step.Compile, multimon: bool) *std.Build.Step.Run {

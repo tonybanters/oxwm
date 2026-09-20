@@ -377,8 +377,94 @@ pub fn incnmaster(delta: i32, wm: *WindowManager) void {
     std.debug.print("incnmaster: nmaster={d}\n", .{monitor.nmaster});
 }
 
+fn focusedScrollClient(wm: *WindowManager) ?*Client {
+    const monitor = wm.selected_monitor orelse return null;
+    if (!core.isScrollingLayout(monitor)) return null;
+    const client = monitor.sel orelse return null;
+    if (client.is_floating) return null;
+    return client;
+}
+
+fn effectiveScrollWidth(client: *Client) f32 {
+    if (client.scroll_width > 0) return client.scroll_width;
+    if (client.monitor) |monitor| return monitor.scroll_default_width;
+    return 0.5;
+}
+
+/// Steps the focused window through the configured width presets.
+pub fn cycleWidth(direction: i32, wm: *WindowManager) void {
+    const client = focusedScrollClient(wm) orelse return;
+    const monitor = client.monitor orelse return;
+    const count: usize = @intCast(wm.config.scroll_width_preset_count);
+    if (count == 0) return;
+    const presets = wm.config.scroll_width_presets[0..count];
+    const current = effectiveScrollWidth(client);
+
+    var matched: ?usize = null;
+    for (presets, 0..) |preset, index| {
+        if (@abs(preset - current) < 0.001) matched = index;
+    }
+
+    var next: usize = 0;
+    if (matched) |index| {
+        const step: i32 = if (direction >= 0) 1 else -1;
+        next = @intCast(@mod(@as(i32, @intCast(index)) + step, @as(i32, @intCast(count))));
+    } else if (direction >= 0) {
+        next = 0;
+        for (presets, 0..) |preset, index| {
+            if (preset > current) {
+                next = index;
+                break;
+            }
+        }
+    } else {
+        next = count - 1;
+        var index: usize = count;
+        while (index > 0) {
+            index -= 1;
+            if (presets[index] < current) {
+                next = index;
+                break;
+            }
+        }
+    }
+
+    client.scroll_width = presets[next];
+    core.arrange(monitor, wm);
+    std.debug.print("cycle_width: width={d:.3}\n", .{client.scroll_width});
+}
+
+/// Sets the focused window's width; `permille` at or below 1000 is a
+/// proportion of the screen, anything larger is pixels times 1000.
+pub fn setWidth(permille: i32, wm: *WindowManager) void {
+    if (permille <= 0) return;
+    const client = focusedScrollClient(wm) orelse return;
+    const monitor = client.monitor orelse return;
+    client.scroll_width = @as(f32, @floatFromInt(permille)) / 1000.0;
+    core.arrange(monitor, wm);
+    std.debug.print("set_width: width={d:.3}\n", .{client.scroll_width});
+}
+
+fn adjustScrollWidth(delta: f32, wm: *WindowManager) void {
+    const client = focusedScrollClient(wm) orelse return;
+    const monitor = client.monitor orelse return;
+    const current = effectiveScrollWidth(client);
+    if (current > 1.0) {
+        const available: f32 = @floatFromInt(monitor.win_w - 2 * monitor.gap_outer_v);
+        client.scroll_width = @max(100.0, @min(current + delta * available, available));
+    } else {
+        client.scroll_width = @max(0.1, @min(current + delta, 1.0));
+    }
+    core.arrange(monitor, wm);
+    std.debug.print("adjust_width: width={d:.3}\n", .{client.scroll_width});
+}
+
 pub fn setmfact(delta: f32, wm: *WindowManager) void {
     const monitor = wm.selected_monitor orelse return;
+    if (core.isScrollingLayout(monitor)) {
+        adjustScrollWidth(delta, wm);
+        return;
+    }
     const new_mfact = monitor.mfact + delta;
     if (new_mfact < 0.05 or new_mfact > 0.95) {
         return;
@@ -856,5 +942,7 @@ pub fn executeAction(action: config_mod.Action, int_arg: i32, str_arg: ?[]const 
         .send_to_monitor => sendmon(int_arg, wm),
         .scroll_left => core.scrollLayout(-1, wm),
         .scroll_right => core.scrollLayout(1, wm),
+        .cycle_width => cycleWidth(if (int_arg == 0) 1 else int_arg, wm),
+        .set_width => setWidth(int_arg, wm),
     }
 }

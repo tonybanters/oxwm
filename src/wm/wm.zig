@@ -18,6 +18,7 @@ const floating = @import("../layouts/floating.zig");
 const scrolling = @import("../layouts/scrolling.zig");
 const grid = @import("../layouts/grid.zig");
 const dwindle = @import("../layouts/dwindle.zig");
+const gesture_mod = @import("../input/gesture.zig");
 
 pub const core = @import("core.zig");
 pub const actions = @import("actions.zig");
@@ -35,6 +36,52 @@ pub const NormalState: c_long = 1;
 pub const WithdrawnState: c_long = 0;
 pub const IconicState: c_long = 3;
 pub const IsViewable: c_int = 2;
+
+pub const gesture_deceleration: f64 = 0.997;
+pub const gesture_history_size = 32;
+pub const gesture_history_ms: i64 = 150;
+
+pub const GestureSample = struct {
+    dx: f64,
+    time_ms: i64,
+};
+
+/// Tracks an in-progress touchpad swipe on the scrolling layout.
+pub const GestureState = struct {
+    active: bool = false,
+    monitor: ?*Monitor = null,
+    position: f64 = 0,
+    history: [gesture_history_size]GestureSample = undefined,
+    history_len: usize = 0,
+
+    pub fn push(self: *GestureState, dx: f64, time_ms: i64) void {
+        if (self.history_len == gesture_history_size) {
+            std.mem.copyForwards(GestureSample, self.history[0 .. gesture_history_size - 1], self.history[1..]);
+            self.history_len -= 1;
+        }
+        self.history[self.history_len] = .{ .dx = dx, .time_ms = time_ms };
+        self.history_len += 1;
+    }
+
+    /// Average velocity in pixels per second over the most recent samples.
+    pub fn velocity(self: *const GestureState, now_ms: i64) f64 {
+        if (self.history_len < 2) return 0.0;
+        const cutoff = now_ms - gesture_history_ms;
+        var total: f64 = 0.0;
+        var first: ?i64 = null;
+        var last: i64 = 0;
+        for (self.history[0..self.history_len]) |sample| {
+            if (sample.time_ms < cutoff) continue;
+            total += sample.dx;
+            if (first == null) first = sample.time_ms;
+            last = sample.time_ms;
+        }
+        const start = first orelse return 0.0;
+        const span = last - start;
+        if (span <= 0) return 0.0;
+        return total / @as(f64, @floatFromInt(span)) * 1000.0;
+    }
+};
 
 pub const Cursors = struct {
     normal: xlib.Cursor,
@@ -86,6 +133,9 @@ pub const WindowManager = struct {
 
     scroll_animation: animations.ScrollAnimation,
     animation_config: animations.AnimationConfig,
+    animation_monitor: ?*Monitor,
+    gesture: GestureState,
+    gestures: ?gesture_mod.Gestures,
 
     running: bool,
     next_spawn_floating: bool = false,
@@ -130,6 +180,9 @@ pub const WindowManager = struct {
             .overlay = null,
             .scroll_animation = .{},
             .animation_config = .{ .duration_ms = 150, .easing = .ease_out },
+            .animation_monitor = null,
+            .gesture = .{},
+            .gestures = null,
             .running = true,
             .last_motion_monitor = null,
         };
@@ -137,12 +190,34 @@ pub const WindowManager = struct {
         wm.setupMonitors();
         wm.setupBars();
         wm.setupOverlay();
+        wm.syncGestures();
 
         return wm;
     }
 
+    /// Opens or closes the libinput gesture source to match the config.
+    pub fn syncGestures(self: *WindowManager) void {
+        if (!gesture_mod.enabled) return;
+        if (self.config.gesture_enabled and self.gestures == null) {
+            self.gestures = gesture_mod.Gestures.init() catch |err| blk: {
+                std.debug.print("touchpad gestures unavailable: {s}\n", .{@errorName(err)});
+                break :blk null;
+            };
+            if (self.gestures != null) std.debug.print("touchpad gestures enabled\n", .{});
+        } else if (!self.config.gesture_enabled and self.gestures != null) {
+            self.gestures.?.deinit();
+            self.gestures = null;
+            self.gesture = .{};
+        }
+    }
+
     /// Release all allocated memory owned by the WM.
     pub fn deinit(self: *WindowManager) void {
+        if (self.gestures) |*gestures| {
+            gestures.deinit();
+            self.gestures = null;
+        }
+
         bar_mod.destroyBars(self.bars, self.display.handle);
         self.bars = null;
 
@@ -416,6 +491,7 @@ pub const WindowManager = struct {
             cfg.gap_outer_h != 0 or cfg.gap_outer_v != 0;
 
         mon.smartgaps_enabled = cfg.smartgaps_enabled;
+        mon.scroll_default_width = cfg.scroll_default_width;
 
         if (cfg.gaps_enabled and any_gap_nonzero) {
             mon.gap_inner_h = cfg.gap_inner_h;
@@ -668,13 +744,16 @@ pub const WindowManager = struct {
     ///
     /// `eventFn` dispatches a single XEvent
     /// `tickFn` is called once per loop iteration to advance animations
+    /// `gestureFn` receives touchpad swipe events from libinput
     pub fn run(
         self: *WindowManager,
         eventFn: fn (*xlib.XEvent, *WindowManager) void,
         tickFn: fn (*WindowManager) void,
+        gestureFn: fn (*WindowManager, gesture_mod.Event) void,
     ) void {
         var fds = [_]std.posix.pollfd{
             .{ .fd = self.x11_fd, .events = std.posix.POLL.IN, .revents = 0 },
+            .{ .fd = -1, .events = std.posix.POLL.IN, .revents = 0 },
         };
 
         _ = xlib.XSync(self.display.handle, xlib.False);
@@ -683,6 +762,10 @@ pub const WindowManager = struct {
             while (xlib.XPending(self.display.handle) > 0) {
                 var event = self.display.nextEvent();
                 eventFn(&event, self);
+            }
+
+            if (self.gestures) |*gestures| {
+                gestures.dispatch(self, gestureFn);
             }
 
             tickFn(self);
@@ -694,6 +777,7 @@ pub const WindowManager = struct {
                 current_bar = bar.next;
             }
 
+            fds[1].fd = if (self.gestures) |gestures| gestures.fd else -1;
             const poll_timeout: i32 = if (self.scroll_animation.isActive()) 16 else 1000;
             _ = std.posix.poll(&fds, poll_timeout) catch 0;
         }
@@ -717,6 +801,12 @@ pub const WindowManager = struct {
         self.config.blocks.clearRetainingCapacity();
 
         loadFn(self);
+
+        var mon = self.monitors;
+        while (mon) |m| : (mon = m.next) {
+            m.scroll_default_width = self.config.scroll_default_width;
+        }
+        self.syncGestures();
 
         bar_mod.destroyBars(self.bars, self.display.handle);
         self.bars = null;
