@@ -33,6 +33,7 @@ pub const Client = struct {
     never_focus: bool = false,
     old_state: bool = false,
     is_fullscreen: bool = false,
+    scroll_width: f32 = 0,
     next: ?*Client = null,
     stack_next: ?*Client = null,
     monitor: ?*Monitor = null,

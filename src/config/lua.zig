@@ -89,6 +89,7 @@ fn registerApi() void {
     registerBorderModule(state);
     registerClientModule(state);
     registerLayoutModule(state);
+    registerScrollModule(state);
     registerTagModule(state);
     registerMonitorModule(state);
     registerRuleModule(state);
@@ -193,7 +194,37 @@ fn registerLayoutModule(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaLayoutScrollRight);
     c.lua_setfield(state, -2, "scroll_right");
 
+    c.lua_pushcfunction(state, luaLayoutCycleWidth);
+    c.lua_setfield(state, -2, "cycle_width");
+
+    c.lua_pushcfunction(state, luaLayoutSetWidth);
+    c.lua_setfield(state, -2, "set_width");
+
     c.lua_setfield(state, -2, "layout");
+}
+
+fn registerScrollModule(state: *c.lua_State) void {
+    c.lua_createtable(state, 0, 6);
+
+    c.lua_pushcfunction(state, luaScrollSetDefaultWidth);
+    c.lua_setfield(state, -2, "set_default_width");
+
+    c.lua_pushcfunction(state, luaScrollSetWidthPresets);
+    c.lua_setfield(state, -2, "set_width_presets");
+
+    c.lua_pushcfunction(state, luaScrollSetGestureEnabled);
+    c.lua_setfield(state, -2, "set_gesture_enabled");
+
+    c.lua_pushcfunction(state, luaScrollSetGestureFingers);
+    c.lua_setfield(state, -2, "set_gesture_fingers");
+
+    c.lua_pushcfunction(state, luaScrollSetGestureSpeed);
+    c.lua_setfield(state, -2, "set_gesture_speed");
+
+    c.lua_pushcfunction(state, luaScrollSetGestureNatural);
+    c.lua_setfield(state, -2, "set_gesture_natural");
+
+    c.lua_setfield(state, -2, "scroll");
 }
 
 fn registerTagModule(state: *c.lua_State) void {
@@ -639,6 +670,85 @@ fn luaLayoutScrollRight(state: ?*c.lua_State) callconv(.c) c_int {
     return 1;
 }
 
+fn luaLayoutCycleWidth(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    var isnum: c_int = 0;
+    const raw = c.lua_tointegerx(s, 1, &isnum);
+    const dir: i32 = if (isnum != 0) @intCast(raw) else 1;
+    createActionTableWithInt(s, "CycleWidth", dir);
+    return 1;
+}
+
+fn luaLayoutSetWidth(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    var isnum: c_int = 0;
+    const value = c.lua_tonumberx(s, 1, &isnum);
+    const permille: i32 = if (isnum != 0 and value > 0) @intFromFloat(@round(value * 1000.0)) else 0;
+    createActionTableWithInt(s, "SetWidth", permille);
+    return 1;
+}
+
+fn luaScrollSetDefaultWidth(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    var isnum: c_int = 0;
+    const value = c.lua_tonumberx(s, 1, &isnum);
+    if (isnum != 0 and value > 0) cfg.scroll_default_width = @floatCast(value);
+    return 0;
+}
+
+fn luaScrollSetWidthPresets(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    if (c.lua_type(s, 1) != c.LUA_TTABLE) return 0;
+
+    const len = c.lua_rawlen(s, 1);
+    var count: u32 = 0;
+    var i: c_longlong = 1;
+    while (i <= len and count < cfg.scroll_width_presets.len) : (i += 1) {
+        _ = c.lua_rawgeti(s, 1, i);
+        var isnum: c_int = 0;
+        const value = c.lua_tonumberx(s, -1, &isnum);
+        c.lua_settop(s, -2);
+        if (isnum == 0 or value <= 0) continue;
+        cfg.scroll_width_presets[count] = @floatCast(value);
+        count += 1;
+    }
+    if (count > 0) cfg.scroll_width_preset_count = count;
+    return 0;
+}
+
+fn luaScrollSetGestureEnabled(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    cfg.gesture_enabled = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
+fn luaScrollSetGestureFingers(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    const value = c.lua_tointegerx(s, 1, null);
+    if (value >= 3 and value <= 5) cfg.gesture_fingers = @intCast(value);
+    return 0;
+}
+
+fn luaScrollSetGestureSpeed(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    var isnum: c_int = 0;
+    const value = c.lua_tonumberx(s, 1, &isnum);
+    if (isnum != 0 and value > 0) cfg.gesture_speed = @floatCast(value);
+    return 0;
+}
+
+fn luaScrollSetGestureNatural(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    cfg.gesture_natural = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
 fn luaTagView(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     const idx: i32 = @intCast(c.lua_tointegerx(s, 1, null));
@@ -784,6 +894,13 @@ fn luaRuleAdd(state: ?*c.lua_State) callconv(.c) c_int {
     _ = c.lua_getfield(s, 1, "focus");
     if (c.lua_type(s, -1) == c.LUA_TBOOLEAN) {
         rule.focus = c.lua_toboolean(s, -1) != 0;
+    }
+    c.lua_settop(s, -2);
+
+    _ = c.lua_getfield(s, 1, "width");
+    if (c.lua_type(s, -1) == c.LUA_TNUMBER) {
+        const width = c.lua_tonumberx(s, -1, null);
+        if (width > 0) rule.width = @floatCast(width);
     }
     c.lua_settop(s, -2);
 
@@ -1421,6 +1538,8 @@ fn parseAction(name: []const u8) ?Action {
         .{ "TagMonitor", Action.send_to_monitor },
         .{ "ScrollLeft", Action.scroll_left },
         .{ "ScrollRight", Action.scroll_right },
+        .{ "CycleWidth", Action.cycle_width },
+        .{ "SetWidth", Action.set_width },
     };
 
     inline for (action_map) |entry| {

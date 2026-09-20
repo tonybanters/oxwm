@@ -76,7 +76,7 @@ function oxwm.toggle_bar() end
 oxwm.rule = {}
 
 ---Add a window rule
----@param rule {class: string?, instance: string?, title: string?, role: string?, floating: boolean?, tag: integer?, fullscreen: boolean?, focus: boolean?} Rule configuration
+---@param rule {class: string?, instance: string?, title: string?, role: string?, floating: boolean?, tag: integer?, fullscreen: boolean?, focus: boolean?, width: number?} Rule configuration (`width` is the scrolling layout column width: a proportion at or below 1, otherwise pixels)
 function oxwm.rule.add(rule) end
 
 ---Quit the window manager
@@ -236,6 +236,44 @@ function oxwm.layout.scroll_left() end
 ---Scroll layout right (for scrolling layout)
 ---@return table Action table for keybinding
 function oxwm.layout.scroll_right() end
+
+---Cycle the focused window through the scrolling width presets
+---@param direction integer? 1 for the next preset, -1 for the previous (default 1)
+---@return table Action table for keybinding
+function oxwm.layout.cycle_width(direction) end
+
+---Set the focused window's width in the scrolling layout
+---@param width number Proportion of the screen (0-1) or pixels (> 1)
+---@return table Action table for keybinding
+function oxwm.layout.set_width(width) end
+
+---Scrolling layout module
+---@class oxwm.scroll
+oxwm.scroll = {}
+
+---Set the default column width for new windows in the scrolling layout
+---@param width number Proportion of the screen (0-1) or pixels (> 1), default 0.5
+function oxwm.scroll.set_default_width(width) end
+
+---Set the width presets cycled by oxwm.layout.cycle_width
+---@param presets number[] Up to 8 widths, default { 1/3, 1/2, 2/3 }
+function oxwm.scroll.set_width_presets(presets) end
+
+---Enable or disable touchpad swipe gestures (requires read access to /dev/input)
+---@param enabled boolean Default true
+function oxwm.scroll.set_gesture_enabled(enabled) end
+
+---Set how many fingers a swipe needs to scroll the layout
+---@param fingers integer 3, 4 or 5 (default 3)
+function oxwm.scroll.set_gesture_fingers(fingers) end
+
+---Set how far the view moves per unit of finger travel
+---@param speed number Multiplier, default 2.0
+function oxwm.scroll.set_gesture_speed(speed) end
+
+---Invert the swipe direction so the windows follow the fingers
+---@param natural boolean Default false
+function oxwm.scroll.set_gesture_natural(natural) end
 
 ---Tag/workspace management module
 ---@class oxwm.tag

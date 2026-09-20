@@ -129,6 +129,17 @@ oxwm.set_layout_symbol("tabbed", "[=]")
 -- Unset value uses oxwm.set_layout value
 -- oxwm.set_tag_layout(1, "grid")
 
+-- Scrolling layout: windows sit side by side in an infinite strip (like niri)
+-- Widths at or below 1 are a proportion of the screen, larger values are pixels
+-- oxwm.scroll.set_default_width(0.5)
+-- oxwm.scroll.set_width_presets({ 1 / 3, 1 / 2, 2 / 3 })
+-- Three-finger touchpad swipes scroll the strip and snap to the nearest window
+-- (needs read access to /dev/input, usually the "input" group)
+-- oxwm.scroll.set_gesture_enabled(true)
+-- oxwm.scroll.set_gesture_fingers(3)
+-- oxwm.scroll.set_gesture_speed(2.0)
+-- oxwm.scroll.set_gesture_natural(false)
+
 -- Set the default attach method, similar to the patches from dwm
 -- Available methods: "aside" (default), "top", "bottom", "above", "below"
 -- For example "above" makes new clients appear above the currently selected one
@@ -238,6 +249,15 @@ oxwm.key.bind({ modkey }, "F", oxwm.layout.set("normie"))
 oxwm.key.bind({ modkey }, "C", oxwm.layout.set("tiling"))
 -- Cycle through layouts
 oxwm.key.bind({ modkey }, "N", oxwm.layout.cycle())
+
+-- Scrolling layout controls
+-- oxwm.key.bind({ modkey }, "G", oxwm.layout.set("scrolling"))
+-- oxwm.key.bind({ modkey }, "Left", oxwm.layout.scroll_left())
+-- oxwm.key.bind({ modkey }, "Right", oxwm.layout.scroll_right())
+-- oxwm.key.bind({ modkey }, "R", oxwm.layout.cycle_width(1))
+-- oxwm.key.bind({ modkey, "Shift" }, "R", oxwm.layout.cycle_width(-1))
+-- oxwm.key.bind({ modkey }, "M", oxwm.layout.set_width(1))
+-- In the scrolling layout set_master_factor resizes the focused window instead
 
 -- Master area controls (tiling layout)
 

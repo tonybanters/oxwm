@@ -35,6 +35,8 @@ pub const Action = enum {
     send_to_monitor,
     scroll_left,
     scroll_right,
+    cycle_width,
+    set_width,
 };
 
 pub const KeyPress = struct {
@@ -58,6 +60,7 @@ pub const Rule = struct {
     is_floating: bool,
     monitor: i32,
     focus: bool,
+    width: f32 = 0,
 };
 
 pub const BlockType = enum {
@@ -221,6 +224,14 @@ pub const Config = struct {
     tiled_resize_mode: bool = false,
     warp_cursor_to_monitor: bool = false,
     warp_cursor_on_send: bool = false,
+
+    scroll_default_width: f32 = 0.5,
+    scroll_width_presets: [8]f32 = .{ 1.0 / 3.0, 0.5, 2.0 / 3.0, 0, 0, 0, 0, 0 },
+    scroll_width_preset_count: u32 = 3,
+    gesture_enabled: bool = true,
+    gesture_fingers: u32 = 3,
+    gesture_speed: f32 = 2.0,
+    gesture_natural: bool = false,
 
     layout_tile_symbol: []const u8 = "[]=",
     layout_monocle_symbol: []const u8 = "[M]",
