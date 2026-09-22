@@ -118,7 +118,9 @@ pub fn offsetToReveal(monitor: *Monitor, offset: i32, target: *Client) i32 {
     return @max(0, @min(offset, max));
 }
 
-/// The snap point whose offset is closest to `position`.
+/// The snap point whose window starts closest to `position`. Distance is
+/// measured before clamping so windows sharing the clamped end offset are
+/// still told apart.
 pub fn nearestSnap(monitor: *Monitor, position: f64) ?Snap {
     const geo = geometry(monitor);
     const max = maxScroll(monitor);
@@ -128,37 +130,14 @@ pub fn nearestSnap(monitor: *Monitor, position: f64) ?Snap {
     var current = client_mod.nextTiled(monitor.clients);
     while (current) |client| : (current = client_mod.nextTiled(client.next)) {
         const width = windowWidth(monitor, client, geo);
-        const snap_offset = @min(offset, max);
-        const dist = @abs(@as(f64, @floatFromInt(snap_offset)) - position);
+        const dist = @abs(@as(f64, @floatFromInt(offset)) - position);
         if (dist < best_dist) {
             best_dist = dist;
-            best = .{ .client = client, .offset = snap_offset, .width = width };
+            best = .{ .client = client, .offset = @min(offset, max), .width = width };
         }
         offset += width + geo.inner;
     }
     return best;
-}
-
-/// The first snap point strictly after (direction > 0) or before
-/// (direction < 0) `position`.
-pub fn adjacentSnap(monitor: *Monitor, position: i32, direction: i32) ?Snap {
-    const geo = geometry(monitor);
-    const max = maxScroll(monitor);
-    var result: ?Snap = null;
-    var offset: i32 = 0;
-    var current = client_mod.nextTiled(monitor.clients);
-    while (current) |client| : (current = client_mod.nextTiled(client.next)) {
-        const width = windowWidth(monitor, client, geo);
-        const snap_offset = @min(offset, max);
-        const snap = Snap{ .client = client, .offset = snap_offset, .width = width };
-        if (direction > 0) {
-            if (snap_offset > position) return snap;
-        } else if (snap_offset < position) {
-            result = snap;
-        }
-        offset += width + geo.inner;
-    }
-    return result;
 }
 
 pub fn scroll(monitor: *Monitor) void {

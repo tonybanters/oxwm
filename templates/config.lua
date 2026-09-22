@@ -139,6 +139,9 @@ oxwm.set_layout_symbol("tabbed", "[=]")
 -- oxwm.scroll.set_gesture_fingers(3)
 -- oxwm.scroll.set_gesture_speed(2.0)
 -- oxwm.scroll.set_gesture_natural(false)
+-- Minimap of the strip in the bar (one box per window, focused highlighted)
+-- oxwm.scroll.set_indicator(true)
+-- oxwm.scroll.set_indicator_width(0) -- pixels, 0 = 4x bar height
 
 -- Set the default attach method, similar to the patches from dwm
 -- Available methods: "aside" (default), "top", "bottom", "above", "below"

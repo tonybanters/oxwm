@@ -232,6 +232,8 @@ pub const Config = struct {
     gesture_fingers: u32 = 3,
     gesture_speed: f32 = 2.0,
     gesture_natural: bool = false,
+    scroll_indicator: bool = true,
+    scroll_indicator_width: i32 = 0,
 
     layout_tile_symbol: []const u8 = "[]=",
     layout_monocle_symbol: []const u8 = "[M]",
