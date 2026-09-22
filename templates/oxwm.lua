@@ -275,6 +275,14 @@ function oxwm.scroll.set_gesture_speed(speed) end
 ---@param natural boolean Default false
 function oxwm.scroll.set_gesture_natural(natural) end
 
+---Show a minimap of the scrolling strip in the bar next to the layout symbol
+---@param enabled boolean Default true
+function oxwm.scroll.set_indicator(enabled) end
+
+---Set the minimap width
+---@param width integer Pixels, 0 = four times the bar height (default)
+function oxwm.scroll.set_indicator_width(width) end
+
 ---Tag/workspace management module
 ---@class oxwm.tag
 oxwm.tag = {}

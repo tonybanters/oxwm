@@ -272,6 +272,7 @@ pub fn arrange(monitor: *Monitor, wm: *WindowManager) void {
         }
     }
     restack(monitor, wm);
+    if (isScrollingLayout(monitor) and wm.config.scroll_indicator) wm.invalidateBars();
 }
 
 pub fn showhide(monitor: *Monitor, wm: *WindowManager) void {
@@ -443,11 +444,27 @@ pub fn scrollLayout(direction: i32, wm: *WindowManager) void {
     const monitor = wm.selected_monitor orelse return;
     if (!isScrollingLayout(monitor) or wm.gesture.active) return;
 
-    const current = scrollTarget(monitor, wm);
-    const snap = scrolling.adjacentSnap(monitor, current, direction) orelse return;
+    const first = client_mod.nextTiled(monitor.clients) orelse return;
+    var target: ?*Client = null;
+    if (monitor.sel) |sel| {
+        if (!sel.is_floating and client_mod.isVisible(sel)) {
+            if (direction > 0) {
+                target = client_mod.nextTiled(sel.next);
+            } else {
+                var previous: ?*Client = null;
+                var current: ?*Client = first;
+                while (current) |client| : (current = client_mod.nextTiled(client.next)) {
+                    if (client == sel) break;
+                    previous = client;
+                }
+                target = previous;
+            }
+        }
+    }
+    const client = target orelse (if (monitor.sel == null or monitor.sel.?.is_floating) first else return);
 
-    focus(snap.client, wm);
-    startScrollAnimation(monitor, snap.offset, wm);
+    focus(client, wm);
+    scrollToWindow(client, true, wm);
 }
 
 pub fn scrollToWindow(client: *Client, animate: bool, wm: *WindowManager) void {

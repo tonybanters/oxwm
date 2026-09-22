@@ -224,6 +224,12 @@ fn registerScrollModule(state: *c.lua_State) void {
     c.lua_pushcfunction(state, luaScrollSetGestureNatural);
     c.lua_setfield(state, -2, "set_gesture_natural");
 
+    c.lua_pushcfunction(state, luaScrollSetIndicator);
+    c.lua_setfield(state, -2, "set_indicator");
+
+    c.lua_pushcfunction(state, luaScrollSetIndicatorWidth);
+    c.lua_setfield(state, -2, "set_indicator_width");
+
     c.lua_setfield(state, -2, "scroll");
 }
 
@@ -746,6 +752,21 @@ fn luaScrollSetGestureNatural(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
     cfg.gesture_natural = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
+fn luaScrollSetIndicator(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    cfg.scroll_indicator = c.lua_toboolean(s, 1) != 0;
+    return 0;
+}
+
+fn luaScrollSetIndicatorWidth(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    const value = c.lua_tointegerx(s, 1, null);
+    if (value >= 0) cfg.scroll_indicator_width = @intCast(value);
     return 0;
 }
 
