@@ -855,6 +855,10 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
     const color = parseColor(state, -1);
     c.lua_settop(state, -2);
 
+    _ = c.lua_getfield(state, idx, "bg");
+    const bg = parseColor(state, -1);
+    c.lua_settop(state, -2);
+
     _ = c.lua_getfield(state, idx, "underline");
     const underline = c.lua_toboolean(state, -1) != 0;
     c.lua_settop(state, -2);
@@ -868,6 +872,7 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
         .format = format,
         .interval = interval,
         .color = color,
+        .bg = bg,
         .underline = underline,
         .click = click,
     };
@@ -1012,6 +1017,9 @@ fn luaBarBlockBattery(state: ?*c.lua_State) callconv(.c) c_int {
     _ = c.lua_getfield(s, 1, "color");
     c.lua_setfield(s, -2, "color");
 
+    _ = c.lua_getfield(s, 1, "bg");
+    c.lua_setfield(s, -2, "bg");
+
     _ = c.lua_getfield(s, 1, "underline");
     c.lua_setfield(s, -2, "underline");
 
@@ -1046,6 +1054,9 @@ fn createBlockTable(state: *c.lua_State, block_type: [*:0]const u8, arg: ?[]cons
 
     _ = c.lua_getfield(state, 1, "color");
     c.lua_setfield(state, -2, "color");
+
+    _ = c.lua_getfield(state, 1, "bg");
+    c.lua_setfield(state, -2, "bg");
 
     _ = c.lua_getfield(state, 1, "underline");
     c.lua_setfield(state, -2, "underline");
