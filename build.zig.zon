@@ -4,10 +4,7 @@
     .fingerprint = 0x4b9ef3753914924d, // Changing this has security and trust implications.
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
-        .lua = .{
-            .url = "https://www.lua.org/ftp/lua-5.4.8.tar.gz",
-            .hash = "N-V-__8AAKEzFAAA695b9LXBhUSVK5MAV_VKSm1mEj3Acbze",
-        },
+        .lua = .{ .path = "deps/lua" },
     },
     .paths = .{
         "build.zig",
