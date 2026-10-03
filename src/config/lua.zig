@@ -19,10 +19,41 @@ var config: ?*Config = null;
 pub fn init(cfg: *Config) bool {
     config = cfg;
     L = c.luaL_newstate();
-    if (L == null) return false;
-    c.luaL_openlibs(L);
+    const state = L orelse return false;
+    openSandboxedLibs(state);
     registerApi();
     return true;
+}
+
+/// Config files run as the user; `luaL_openlibs` would expose `io`,
+/// `os.execute`, `package.loadlib`, `debug`, `require`, and `load`,
+/// making config.lua into an exploitable RCE 
+
+fn openSandboxedLibs(state: *c.lua_State) void {
+    const safe_libs = [_]struct {
+        name: [*:0]const u8,
+        open: c.lua_CFunction,
+    }{
+        .{ .name = "_G", .open = c.luaopen_base },
+        .{ .name = "table", .open = c.luaopen_table },
+        .{ .name = "string", .open = c.luaopen_string },
+        .{ .name = "math", .open = c.luaopen_math },
+        .{ .name = "utf8", .open = c.luaopen_utf8 },
+        .{ .name = "coroutine", .open = c.luaopen_coroutine },
+    };
+    for (safe_libs) |lib| {
+        c.luaL_requiref(state, lib.name, lib.open, 1);
+        c.lua_settop(state, -2);
+    }
+
+    // Any of these turns the sandbox back into an arbitrary-code VM.
+    const banned_globals = [_][*:0]const u8{
+        "dofile", "loadfile", "load", "loadstring", "collectgarbage",
+    };
+    for (banned_globals) |name| {
+        c.lua_pushnil(state);
+        c.lua_setglobal(state, name);
+    }
 }
 
 pub fn deinit() void {
@@ -39,16 +70,6 @@ pub fn loadFile(path: []const u8) bool {
     if (path.len >= path_buf.len) return false;
     @memcpy(path_buf[0..path.len], path);
     path_buf[path.len] = 0;
-
-    if (std.mem.lastIndexOfScalar(u8, path, '/')) |last_slash| {
-        const dir = path[0..last_slash];
-        var setup_buf: [600]u8 = undefined;
-        const setup_code = std.fmt.bufPrintZ(&setup_buf, "package.path = '{s}/?.lua;' .. package.path", .{dir}) catch return false;
-        if (c.luaL_loadstring(state, setup_code.ptr) != 0 or c.lua_pcallk(state, 0, 0, 0, 0, null) != 0) {
-            c.lua_settop(state, -2);
-            return false;
-        }
-    }
 
     if (c.luaL_loadfilex(state, &path_buf, null) != 0) {
         const err = c.lua_tolstring(state, -1, null);
