@@ -110,10 +110,18 @@ pub fn manage(win: xlib.Window, window_attrs: *xlib.XWindowAttributes, wm: *Wind
     arrange(monitor, wm);
     _ = xlib.XMapWindow(wm.display.handle, win);
     focus(null, wm);
+
+    if (client.rule_fullscreen) {
+        setFullscreen(client, true, wm);
+    }
 }
 
-pub fn unmanage(client: *Client, wm: *WindowManager) void {
+pub fn unmanage(client: *Client, destroyed: bool, wm: *WindowManager) void {
     const client_monitor = client.monitor;
+
+    if (!destroyed) {
+        setClientState(client, window_manager.WithdrawnState, wm);
+    }
 
     var next_focus: ?*Client = null;
     if (client_monitor) |monitor| {
@@ -328,25 +336,30 @@ pub fn grabbuttons(client: *Client, focused: bool, wm: *WindowManager) void {
 
 pub fn setClientState(client: *Client, state: c_long, wm: *WindowManager) void {
     var data: [2]c_long = .{ state, xlib.None };
-    _ = xlib.c.XChangeProperty(wm.display.handle, client.window, wm.atoms.wm_state, xlib.XA_ATOM, 32, xlib.PropModeReplace, @ptrCast(&data), 2);
+    _ = xlib.c.XChangeProperty(wm.display.handle, client.window, wm.atoms.wm_state, wm.atoms.wm_state, 32, xlib.PropModeReplace, @ptrCast(&data), 2);
+}
+
+pub fn publishNetWmState(client: *Client, wm: *WindowManager) void {
+    var fullscreen_atom = wm.atoms.net_wm_state_fullscreen;
+    const count: c_int = if (client.is_fullscreen) 1 else 0;
+    _ = xlib.XChangeProperty(
+        wm.display.handle,
+        client.window,
+        wm.atoms.net_wm_state,
+        xlib.XA_ATOM,
+        32,
+        xlib.PropModeReplace,
+        @ptrCast(&fullscreen_atom),
+        count,
+    );
 }
 
 pub fn setFullscreen(client: *Client, fullscreen: bool, wm: *WindowManager) void {
     const monitor = client.monitor orelse return;
 
     if (fullscreen and !client.is_fullscreen) {
-        var fullscreen_atom = wm.atoms.net_wm_state_fullscreen;
-        _ = xlib.XChangeProperty(
-            wm.display.handle,
-            client.window,
-            wm.atoms.net_wm_state,
-            xlib.XA_ATOM,
-            32,
-            xlib.PropModeReplace,
-            @ptrCast(&fullscreen_atom),
-            1,
-        );
         client.is_fullscreen = true;
+        publishNetWmState(client, wm);
         client.old_state = client.is_floating;
         client.old_border_width = client.border_width;
         client.border_width = 0;
@@ -358,18 +371,8 @@ pub fn setFullscreen(client: *Client, fullscreen: bool, wm: *WindowManager) void
 
         std.debug.print("fullscreen enabled: window=0x{x}\n", .{client.window});
     } else if (!fullscreen and client.is_fullscreen) {
-        var no_atom: xlib.Atom = 0;
-        _ = xlib.XChangeProperty(
-            wm.display.handle,
-            client.window,
-            wm.atoms.net_wm_state,
-            xlib.XA_ATOM,
-            32,
-            xlib.PropModeReplace,
-            @ptrCast(&no_atom),
-            0,
-        );
         client.is_fullscreen = false;
+        publishNetWmState(client, wm);
         client.is_floating = client.old_state;
         client.border_width = client.old_border_width;
 
@@ -463,24 +466,61 @@ fn positionFloating(client: *Client, monitor: *Monitor, pos: config_mod.Floating
     client.y = y;
 }
 
+fn ruleMatches(rule: config_mod.Rule, class_str: []const u8, instance_str: []const u8, title_str: []const u8) bool {
+    const class_matches = if (rule.class) |rc| std.mem.indexOf(u8, class_str, rc) != null else true;
+    const instance_matches = if (rule.instance) |ri| std.mem.indexOf(u8, instance_str, ri) != null else true;
+    const title_matches = if (rule.title) |rt| std.mem.indexOf(u8, title_str, rt) != null else true;
+    return class_matches and instance_matches and title_matches;
+}
+
+pub fn applyFullscreenRule(client: *Client, wm: *WindowManager) void {
+    if (client.rule_fullscreen or client.is_fullscreen) return;
+
+    var has_fullscreen_rule = false;
+    for (wm.config.rules.items) |rule| {
+        if (rule.is_fullscreen) has_fullscreen_rule = true;
+    }
+    if (!has_fullscreen_rule) return;
+
+    var class_hint: xlib.XClassHint = .{ .res_name = null, .res_class = null };
+    _ = xlib.XGetClassHint(wm.display.handle, client.window, &class_hint);
+    defer {
+        if (class_hint.res_class) |ptr| _ = xlib.XFree(@ptrCast(ptr));
+        if (class_hint.res_name) |ptr| _ = xlib.XFree(@ptrCast(ptr));
+    }
+
+    const class_str: []const u8 = if (class_hint.res_class) |ptr| std.mem.sliceTo(ptr, 0) else "";
+    const instance_str: []const u8 = if (class_hint.res_name) |ptr| std.mem.sliceTo(ptr, 0) else "";
+    const title_str = std.mem.sliceTo(&client.name, 0);
+
+    for (wm.config.rules.items) |rule| {
+        if (rule.is_fullscreen and ruleMatches(rule, class_str, instance_str, title_str)) {
+            client.rule_fullscreen = true;
+            setFullscreen(client, true, wm);
+            return;
+        }
+    }
+}
+
 pub fn applyRules(client: *Client, wm: *WindowManager) void {
     var class_hint: xlib.XClassHint = .{ .res_name = null, .res_class = null };
     _ = xlib.XGetClassHint(wm.display.handle, client.window, &class_hint);
 
     const class_str: []const u8 = if (class_hint.res_class) |ptr| std.mem.sliceTo(ptr, 0) else "";
     const instance_str: []const u8 = if (class_hint.res_name) |ptr| std.mem.sliceTo(ptr, 0) else "";
+    const title_str = std.mem.sliceTo(&client.name, 0);
 
     client.is_floating = false;
     client.tags = 0;
+    client.rule_fullscreen = false;
     var rule_focus = false;
 
     for (wm.config.rules.items) |rule| {
-        const class_matches = if (rule.class) |rc| std.mem.indexOf(u8, class_str, rc) != null else true;
-        const instance_matches = if (rule.instance) |ri| std.mem.indexOf(u8, instance_str, ri) != null else true;
-        const title_matches = if (rule.title) |rt| std.mem.indexOf(u8, std.mem.sliceTo(&client.name, 0), rt) != null else true;
-
-        if (class_matches and instance_matches and title_matches) {
+        if (ruleMatches(rule, class_str, instance_str, title_str)) {
             client.is_floating = rule.is_floating;
+            if (rule.is_fullscreen) {
+                client.rule_fullscreen = true;
+            }
             client.tags |= rule.tags;
             if (rule.monitor >= 0) {
                 var target = wm.monitors;
