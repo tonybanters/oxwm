@@ -7,6 +7,7 @@ pub const Atoms = struct {
     wm_delete: xlib.Atom,
     wm_state: xlib.Atom,
     wm_take_focus: xlib.Atom,
+    wm_change_state: xlib.Atom,
 
     // EWHM atoms
     net_supported: xlib.Atom,
@@ -39,6 +40,7 @@ pub const Atoms = struct {
             .wm_delete = intern(display, "WM_DELETE_WINDOW"),
             .wm_state = intern(display, "WM_STATE"),
             .wm_take_focus = intern(display, "WM_TAKE_FOCUS"),
+            .wm_change_state = intern(display, "WM_CHANGE_STATE"),
 
             .net_supported = intern(display, "_NET_SUPPORTED"),
             .net_wm_name = intern(display, "_NET_WM_NAME"),
