@@ -1,6 +1,7 @@
 const std = @import("std");
 const format_util = @import("format.zig");
 const c = @cImport({
+    @cDefine("_POSIX_C_SOURCE", "200809L");
     @cInclude("time.h");
 });
 
