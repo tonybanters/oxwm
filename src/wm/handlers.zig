@@ -74,6 +74,10 @@ fn handleConfigureRequest(event: *xlib.XConfigureRequestEvent, wm: *WindowManage
     const client = client_mod.windowToClient(wm.monitors, event.window);
 
     if (client) |managed_client| {
+        if (managed_client.is_fullscreen) {
+            tiling.sendConfigure(managed_client);
+            return;
+        }
         if ((event.value_mask & xlib.c.CWBorderWidth) != 0) {
             managed_client.border_width = event.border_width;
         } else if (managed_client.is_floating or (managed_client.monitor != null and managed_client.monitor.?.lt[managed_client.monitor.?.sel_lt] == null)) {
@@ -318,6 +322,9 @@ fn handleClientMessage(event: *xlib.XClientMessageEvent, wm: *WindowManager) voi
                 core.setFullscreen(client, !client.is_fullscreen, wm);
             }
         }
+        core.publishNetWmState(client, wm);
+    } else if (event.message_type == wm.atoms.wm_change_state) {
+        core.setClientState(client, core.NormalState, wm);
     } else if (event.message_type == wm.atoms.net_active_window) {
         const selected = wm.selected_monitor orelse return;
         if (client != selected.sel and !client.is_urgent) {
@@ -336,7 +343,7 @@ fn handleDestroyNotify(event: *xlib.XDestroyWindowEvent, wm: *WindowManager) voi
 
     const client = client_mod.windowToClient(wm.monitors, event.window) orelse return;
     std.debug.print("destroy_notify: window=0x{x}\n", .{event.window});
-    core.unmanage(client, wm);
+    core.unmanage(client, true, wm);
 }
 
 fn handleUnmapNotify(event: *xlib.XUnmapEvent, wm: *WindowManager) void {
@@ -349,7 +356,7 @@ fn handleUnmapNotify(event: *xlib.XUnmapEvent, wm: *WindowManager) void {
 
     const client = client_mod.windowToClient(wm.monitors, event.window) orelse return;
     std.debug.print("unmap_notify: window=0x{x}\n", .{event.window});
-    core.unmanage(client, wm);
+    core.unmanage(client, false, wm);
 }
 
 fn handleEnterNotify(event: *xlib.XCrossingEvent, wm: *WindowManager) void {
@@ -430,6 +437,7 @@ fn handlePropertyNotify(event: *xlib.XPropertyEvent, wm: *WindowManager) void {
         wm.invalidateBars();
     } else if (event.atom == xlib.XA_WM_NAME or event.atom == wm.atoms.net_wm_name) {
         core.updateTitle(client, wm);
+        core.applyFullscreenRule(client, wm);
     } else if (event.atom == wm.atoms.net_wm_window_type) {
         core.updateWindowType(client, wm);
     }

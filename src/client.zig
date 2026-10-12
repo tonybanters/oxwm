@@ -34,6 +34,7 @@ pub const Client = struct {
     old_state: bool = false,
     is_fullscreen: bool = false,
     scroll_width: f32 = 0,
+    rule_fullscreen: bool = false,
     next: ?*Client = null,
     stack_next: ?*Client = null,
     monitor: ?*Monitor = null,
