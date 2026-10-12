@@ -6,6 +6,21 @@ A dynamic window manager written in Zig, inspired by dwm but designed to evolve 
 
 **Documentation:** [ox-docs.vercel.app](https://ox-docs.vercel.app/)
 
+## Showcase
+
+Setups from OXWM users across Arch, CachyOS, Debian and FreeBSD.
+
+<table>
+  <tr>
+    <td><img src="./images/example1.png" alt="OXWM on Arch Linux with btop and fastfetch in a Rosepuccin theme"></td>
+    <td><img src="./images/example2.png" alt="OXWM on CachyOS with a custom bar, notifications and a floating terminal"></td>
+  </tr>
+  <tr>
+    <td><img src="./images/example3.png" alt="OXWM on FreeBSD running under XLibre with st"></td>
+    <td><img src="./images/example4.png" alt="OXWM on Debian showing the keybinds overlay over fastfetch and a music player"></td>
+  </tr>
+</table>
+
 ## Installation
 
 ### NixOS (nixpkgs)

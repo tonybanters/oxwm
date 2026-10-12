@@ -58,6 +58,7 @@ pub const Rule = struct {
     title: ?[]const u8,
     tags: u32,
     is_floating: bool,
+    is_fullscreen: bool,
     monitor: i32,
     focus: bool,
     width: f32 = 0,
