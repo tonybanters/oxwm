@@ -292,12 +292,27 @@ pub const Bar = struct {
         return null;
     }
 
-    /// Returns the click action of the block the user clicked on, or null.
-    pub fn handleBlockClick(self: *Bar, click_x: i32) ?config_mod.ClickAction {
+    /// Returns the action bound to the given button on the block at click_x,
+    /// or null if no block is hit or no action is bound for that button.
+    /// Button numbers follow X11 convention: 1 = left, 2 = middle, 3 = right,
+    /// 4 = scroll up, 5 = scroll down.
+    pub fn handleBlockButton(self: *Bar, click_x: i32, button: u32) ?config_mod.ClickAction {
         for (self.blocks.items) |*block| {
-            if (block.click != null and click_x >= block.x_start and click_x < block.x_end) {
-                return block.click;
+            if (click_x < block.x_start or click_x >= block.x_end) continue;
+            const action = switch (button) {
+                1 => block.left_click orelse block.click,
+                3 => block.right_click,
+                4 => block.scroll_up,
+                5 => block.scroll_down,
+                else => null,
+            };
+            if (action != null) {
+                // The action likely changed the state this block displays
+                // (e.g. volume scroll). Force re-poll on the next update tick
+                // instead of waiting out the block's interval.
+                block.last_update = 0;
             }
+            return action;
         }
         return null;
     }

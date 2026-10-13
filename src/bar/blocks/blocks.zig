@@ -15,6 +15,10 @@ pub const Block = struct {
     cached_len: usize,
     underline: bool,
     click: ?config_mod.ClickAction = null,
+    left_click: ?config_mod.ClickAction = null,
+    right_click: ?config_mod.ClickAction = null,
+    scroll_up: ?config_mod.ClickAction = null,
+    scroll_down: ?config_mod.ClickAction = null,
     x_start: i32 = 0,
     x_end: i32 = 0,
 
