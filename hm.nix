@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkEnableOption mkOption mkIf types concatMapStringsSep concatStringsSep concatMapStrings boolToString optional;
+  inherit (lib) mkEnableOption mkOption mkIf types concatMapStringsSep concatStringsSep concatMapStrings boolToString optional optionalString;
   inherit (lib.strings) escapeNixString;
   cfg = config.programs.oxwm.settings;
   pkg = config.programs.oxwm.package;
@@ -14,6 +14,7 @@
     common = ''
       interval = ${toString block.interval},
       color = "#${block.color}",
+      ${optionalString (block.bg != "") ''bg = "#${block.bg}",''}
       underline = ${boolToString block.underline},
     '';
   in
@@ -340,6 +341,11 @@ in {
               color = mkOption {
                 type = types.str;
                 default = "";
+              };
+              bg = mkOption {
+                type = types.str;
+                default = "";
+                description = "Optional background color for the block (hex without #). Empty means no background.";
               };
               underline = mkOption {
                 type = types.bool;
