@@ -309,15 +309,6 @@ pub fn focusstack(direction: i32, wm: *WindowManager) void {
             }
             next_client = client.next;
         }
-        if (next_client == null) {
-            next_client = monitor.clients;
-            while (next_client) |client| {
-                if (client_mod.isVisible(client)) {
-                    break;
-                }
-                next_client = client.next;
-            }
-        }
     } else {
         var prev: ?*Client = null;
         var iter = monitor.clients;
@@ -329,15 +320,6 @@ pub fn focusstack(direction: i32, wm: *WindowManager) void {
                 prev = client;
             }
             iter = client.next;
-        }
-        if (prev == null) {
-            iter = current.next;
-            while (iter) |client| {
-                if (client_mod.isVisible(client)) {
-                    prev = client;
-                }
-                iter = client.next;
-            }
         }
         next_client = prev;
     }
