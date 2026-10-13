@@ -88,7 +88,7 @@
     oxwm.border.set_focused_color("#${cfg.border.focusedColor}")
     oxwm.border.set_unfocused_color("#${cfg.border.unfocusedColor}")
 
-    oxwm.gaps.set_smart(${cfg.gaps.smart})
+    oxwm.gaps.set_smart(${boolToString cfg.gaps.smart})
     oxwm.gaps.set_inner(${concatMapStringsSep ", " toString cfg.gaps.inner})
     oxwm.gaps.set_outer(${concatMapStringsSep ", " toString cfg.gaps.outer})
 
@@ -279,8 +279,8 @@ in {
       };
       gaps = {
         smart = mkOption {
-          type = types.enum ["enabled" "disabled"];
-          default = "enabled";
+          type = types.bool;
+          default = true;
           description = "If enabled, removes border if single window in tag";
         };
         inner = mkOption {
