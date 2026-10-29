@@ -424,7 +424,7 @@ fn luaKeyBind(state: ?*c.lua_State) callconv(.c) c_int {
     if (c.lua_type(s, -1) == c.LUA_TNUMBER) {
         int_arg = @intCast(c.lua_tointegerx(s, -1, null));
     } else if (c.lua_type(s, -1) == c.LUA_TSTRING) {
-        str_arg = getLuaString(s, -1);
+        str_arg = dupeLuaString(s, -1);
     } else if (c.lua_type(s, -1) == c.LUA_TTABLE) {
         str_arg = extractSpawnCommand(s, -1);
     }
@@ -503,7 +503,7 @@ fn luaKeyChord(state: ?*c.lua_State) callconv(.c) c_int {
     if (c.lua_type(s, -1) == c.LUA_TNUMBER) {
         keybind.int_arg = @intCast(c.lua_tointegerx(s, -1, null));
     } else if (c.lua_type(s, -1) == c.LUA_TSTRING) {
-        keybind.str_arg = getLuaString(s, -1);
+        keybind.str_arg = dupeLuaString(s, -1);
     } else if (c.lua_type(s, -1) == c.LUA_TTABLE) {
         keybind.str_arg = extractSpawnCommand(s, -1);
     }
@@ -1285,14 +1285,14 @@ fn extractSpawnCommand(state: *c.lua_State, idx: c_int) ?[]const u8 {
             std.mem.eql(u8, first.?, "sh") and std.mem.eql(u8, second.?, "-c"))
         {
             _ = c.lua_rawgeti(state, idx, 3);
-            const cmd = getLuaString(state, -1);
+            const cmd = dupeLuaString(state, -1);
             c.lua_settop(state, -2);
             return cmd;
         }
     }
 
     _ = c.lua_rawgeti(state, idx, 1);
-    const first_elem = getLuaString(state, -1);
+    const first_elem = dupeLuaString(state, -1);
     c.lua_settop(state, -2);
     return first_elem;
 }
