@@ -4,6 +4,8 @@ const monitor_mod = @import("../monitor.zig");
 const blocks_mod = @import("blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
 const systray_mod = @import("systray.zig");
+const client_mod = @import("../client.zig");
+const scrolling = @import("../layouts/scrolling.zig");
 const ColorScheme = config_mod.ColorScheme;
 
 const Monitor = monitor_mod.Monitor;
@@ -232,6 +234,10 @@ pub const Bar = struct {
         self.drawText(display, x_position, @divTrunc(self.height + self.font_height, 2) - 4, layout_symbol, self.scheme_normal.foreground);
         x_position += self.textWidth(display, layout_symbol) + padding;
 
+        if (config.scroll_indicator and monitor.sel_lt == @intFromEnum(config_mod.Layouts.scrolling)) {
+            x_position += self.drawScrollIndicator(display, x_position, config.scroll_indicator_width) + padding;
+        }
+
         const systray_width: i32 = if (self.systray) |tray| tray.width() else 0;
         var block_x: i32 = self.width - padding - systray_width;
         if (systray_width > 0) block_x -= padding;
@@ -309,6 +315,46 @@ pub const Bar = struct {
             if (block.update(io, gpa)) changed = true;
         }
         if (changed) self.needs_redraw = true;
+    }
+
+    /// toggle-able minimap on bar to indicate your scrolling position 
+    /// (similar to waybar per Fedesito's request)
+    fn drawScrollIndicator(
+        self: *Bar,
+        display: *xlib.Display,
+        x: i32,
+        configured_width: i32
+    ) i32 {
+        const monitor = self.monitor;
+        const geo = scrolling.geometry(monitor);
+        const content = scrolling.contentWidth(monitor);
+        if (geo.count == 0 or content <= 0) return 0;
+
+        const total: i32 = if (configured_width > 0) configured_width else self.height * 4;
+        const scale = @as(f32, @floatFromInt(total)) / @as(f32, @floatFromInt(@max(content, geo.available_w)));
+        const box_height = @max(4, @divTrunc(self.height, 3));
+        const box_y = @divTrunc(self.height - box_height, 2);
+
+        var current = client_mod.nextTiled(monitor.clients);
+        var left: i32 = 0;
+        while (current) |client| : (current = client_mod.nextTiled(client.next)) {
+            const width = scrolling.windowWidth(monitor, client, geo);
+            const box_x = x + @as(i32, @intFromFloat(@as(f32, @floatFromInt(left)) * scale));
+            const box_w = @max(2, @as(i32, @intFromFloat(@as(f32, @floatFromInt(width)) * scale)) - 1);
+            const color = if (client == monitor.sel) self.scheme_selected.border else self.scheme_normal.border;
+            self.fillRect(display, box_x, box_y, box_w, box_height, color);
+            left += width + geo.inner;
+        }
+
+        const view_left = @max(0, monitor.scroll_offset);
+        const view_right = @min(@max(content, geo.available_w), monitor.scroll_offset + geo.available_w);
+        if (view_right > view_left) {
+            const line_x = x + @as(i32, @intFromFloat(@as(f32, @floatFromInt(view_left)) * scale));
+            const line_w = @max(1, @as(i32, @intFromFloat(@as(f32, @floatFromInt(view_right - view_left)) * scale)));
+            self.fillRect(display, line_x, self.height - 3, line_w, 2, self.scheme_occupied.border);
+        }
+
+        return total;
     }
 
     fn fillRect(self: *Bar, display: *xlib.Display, x: i32, y: i32, width: i32, height: i32, color: c_ulong) void {

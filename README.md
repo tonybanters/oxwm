@@ -70,7 +70,7 @@ This will automatically put a desktop session file into your xsessions directory
 Manually, install the dependencies and see Building from Source:
 
 ```sh
-sudo pacman -S zig libx11 libxft freetype2 fontconfig libxinerama
+sudo pacman -S zig libx11 libxft freetype2 fontconfig libxinerama libinput systemd-libs
 ```
 
 ### Building from Source
@@ -90,6 +90,8 @@ git clone https://github.com/tonybanters/oxwm
 cd oxwm
 zig build -Doptimize=ReleaseSmall --prefix /usr
 ```
+
+Touchpad swipe gestures for the scrolling layout use libinput and libudev, which only exist on Linux. They are compiled in by default (needs the libinput and libudev development packages) and skipped automatically on BSD targets. At runtime they stay off until you uncomment `oxwm.scroll.set_gesture_enabled(true)` in your config. Pass `-Dno_gestures` to leave them out anywhere, or use `zig build openbsd` (also `freebsd`, `netbsd`, `bsd`) which does the same and installs the result.
 
 ### Setting up OXWM
 
@@ -236,7 +238,7 @@ Default keybindings (fully customizable in `~/.config/oxwm/config.lua`):
   - Normie (floating-by-default)
   - Monocle (fullscreen stacking)
   - Grid (equal-sized grid)
-  - Scrolling (horizontal scroll)
+  - Scrolling (niri-style horizontal strip with per-window widths and three-finger touchpad swipes)
   - Dwindle (fibonacci spiral)
 - **Configurable Attach Method** for new windows: aside, top, bottom, above, or below
 - **Lua Configuration System**

@@ -39,6 +39,7 @@ pub const Monitor = struct {
     gap_outer_v: i32 = 0,
     smartgaps_enabled: bool = false,
     scroll_offset: i32 = 0,
+    scroll_default_width: f32 = 0.5,
     sel_tags: u32 = 0,
     sel_lt: u32 = 0,
     tagset: [2]u32 = .{ 1, 1 },

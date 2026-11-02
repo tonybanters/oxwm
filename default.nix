@@ -10,6 +10,8 @@
   lua5_4,
   freetype,
   fontconfig,
+  libinput,
+  udev,
   gitRev ? "unknown",
 }:
 stdenv.mkDerivation (finalAttrs: {
@@ -29,6 +31,8 @@ stdenv.mkDerivation (finalAttrs: {
     lua5_4
     freetype
     fontconfig
+    libinput
+    udev
   ];
 
   postInstall = ''

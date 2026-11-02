@@ -4,6 +4,7 @@ const client_mod = @import("../client.zig");
 const monitor_mod = @import("../monitor.zig");
 const tiling = @import("../layouts/tiling.zig");
 const scrolling = @import("../layouts/scrolling.zig");
+const gesture_mod = @import("../input/gesture.zig");
 const window_manager = @import("wm.zig");
 
 const config_mod = @import("../config/config.zig");
@@ -104,7 +105,7 @@ pub fn manage(win: xlib.Window, window_attrs: *xlib.XWindowAttributes, wm: *Wind
     monitor.sel = client;
 
     if (isScrollingLayout(monitor)) {
-        monitor.scroll_offset = 0;
+        scrollToWindow(client, true, wm);
     }
 
     arrange(monitor, wm);
@@ -148,12 +149,9 @@ pub fn unmanage(client: *Client, destroyed: bool, wm: *WindowManager) void {
             monitor.sel = if (next_focus) |nf| nf else monitor.stack;
         }
         if (isScrollingLayout(monitor)) {
-            const target = if (monitor.sel) |sel| scrolling.getTargetScrollForWindow(monitor, sel) else 0;
-            if (target == 0) {
-                monitor.scroll_offset = scrolling.getScrollStep(monitor);
-            } else {
-                monitor.scroll_offset = 0;
-            }
+            if (wm.animation_monitor == monitor) wm.scroll_animation.stop();
+            monitor.scroll_offset = @max(0, @min(monitor.scroll_offset, scrolling.maxScroll(monitor)));
+            if (monitor.sel) |sel| scrollToWindow(sel, true, wm);
         }
         arrange(monitor, wm);
     }
@@ -267,12 +265,22 @@ pub fn restack(monitor: *Monitor, wm: *WindowManager) void {
 
 pub fn arrange(monitor: *Monitor, wm: *WindowManager) void {
     showhide(monitor, wm);
+    if (isScrollingLayout(monitor) and !scrollInMotion(monitor, wm)) {
+        var offset: i32 = @max(0, @min(monitor.scroll_offset, scrolling.maxScroll(monitor)));
+        if (monitor.sel) |sel| {
+            if (!sel.is_floating and client_mod.isVisible(sel)) {
+                offset = scrolling.offsetToReveal(monitor, offset, sel);
+            }
+        }
+        monitor.scroll_offset = offset;
+    }
     if (monitor.lt[monitor.sel_lt]) |layout| {
         if (layout.arrange_fn) |arrange_fn| {
             arrange_fn(monitor);
         }
     }
     restack(monitor, wm);
+    if (isScrollingLayout(monitor) and wm.config.scroll_indicator) wm.invalidateBars();
 }
 
 pub fn showhide(monitor: *Monitor, wm: *WindowManager) void {
@@ -404,7 +412,7 @@ pub fn focusTopClient(monitor: *Monitor, wm: *WindowManager) void {
 pub fn tickAnimations(wm: *WindowManager) void {
     if (!wm.scroll_animation.isActive()) return;
 
-    const monitor = wm.selected_monitor orelse return;
+    const monitor = wm.animation_monitor orelse return;
     if (wm.scroll_animation.update(wm.io)) |new_offset| {
         monitor.scroll_offset = new_offset;
         arrange(monitor, wm);
@@ -418,36 +426,135 @@ pub fn isScrollingLayout(monitor: *Monitor) bool {
     return false;
 }
 
+fn animationActiveOn(monitor: *Monitor, wm: *WindowManager) bool {
+    return wm.scroll_animation.isActive() and wm.animation_monitor == monitor;
+}
+
+fn scrollInMotion(monitor: *Monitor, wm: *WindowManager) bool {
+    return animationActiveOn(monitor, wm) or (wm.gesture.active and wm.gesture.monitor == monitor);
+}
+
+fn scrollTarget(monitor: *Monitor, wm: *WindowManager) i32 {
+    return if (animationActiveOn(monitor, wm)) wm.scroll_animation.target() else monitor.scroll_offset;
+}
+
+fn startScrollAnimation(monitor: *Monitor, target: i32, wm: *WindowManager) void {
+    wm.animation_monitor = monitor;
+    wm.scroll_animation.start(wm.io, monitor.scroll_offset, target, wm.animation_config);
+}
+
 pub fn scrollLayout(direction: i32, wm: *WindowManager) void {
     const monitor = wm.selected_monitor orelse return;
-    if (!isScrollingLayout(monitor)) return;
+    if (!isScrollingLayout(monitor) or wm.gesture.active) return;
 
-    const scroll_step = scrolling.getScrollStep(monitor);
-    const max_scroll = scrolling.getMaxScroll(monitor);
+    const first = client_mod.nextTiled(monitor.clients) orelse return;
+    var target: ?*Client = null;
+    if (monitor.sel) |sel| {
+        if (!sel.is_floating and client_mod.isVisible(sel)) {
+            if (direction > 0) {
+                target = client_mod.nextTiled(sel.next);
+            } else {
+                var previous: ?*Client = null;
+                var current: ?*Client = first;
+                while (current) |client| : (current = client_mod.nextTiled(client.next)) {
+                    if (client == sel) break;
+                    previous = client;
+                }
+                target = previous;
+            }
+        }
+    }
+    const client = target orelse (if (monitor.sel == null or monitor.sel.?.is_floating) first else return);
 
-    const current = if (wm.scroll_animation.isActive())
-        wm.scroll_animation.target()
-    else
-        monitor.scroll_offset;
-
-    var target = current + direction * scroll_step;
-    target = @max(0, @min(target, max_scroll));
-
-    wm.scroll_animation.start(wm.io, monitor.scroll_offset, target, wm.animation_config);
+    focus(client, wm);
+    scrollToWindow(client, true, wm);
 }
 
 pub fn scrollToWindow(client: *Client, animate: bool, wm: *WindowManager) void {
     const monitor = client.monitor orelse return;
     if (!isScrollingLayout(monitor)) return;
+    if (wm.gesture.active and wm.gesture.monitor == monitor) return;
 
-    const target = scrolling.getTargetScrollForWindow(monitor, client);
+    const base = scrollTarget(monitor, wm);
+    const target = scrolling.offsetToReveal(monitor, base, client);
 
     if (animate) {
-        wm.scroll_animation.start(wm.io, monitor.scroll_offset, target, wm.animation_config);
+        if (target == base and animationActiveOn(monitor, wm)) return;
+        startScrollAnimation(monitor, target, wm);
     } else {
         monitor.scroll_offset = target;
         arrange(monitor, wm);
     }
+}
+
+fn nowMs(wm: *WindowManager) i64 {
+    return std.Io.Timestamp.now(wm.io, .awake).toMilliseconds();
+}
+
+pub fn handleGesture(wm: *WindowManager, event: gesture_mod.Event) void {
+    switch (event.kind) {
+        .begin => gestureBegin(event, wm),
+        .update => gestureUpdate(event, wm),
+        .end => gestureEnd(event, wm),
+    }
+}
+
+fn gestureBegin(event: gesture_mod.Event, wm: *WindowManager) void {
+    if (event.fingers != wm.config.gesture_fingers) return;
+    const monitor = wm.selected_monitor orelse return;
+    if (!isScrollingLayout(monitor)) return;
+
+    if (animationActiveOn(monitor, wm)) wm.scroll_animation.stop();
+
+    wm.gesture = .{
+        .active = true,
+        .monitor = monitor,
+        .position = @floatFromInt(monitor.scroll_offset),
+    };
+}
+
+fn gestureUpdate(event: gesture_mod.Event, wm: *WindowManager) void {
+    if (!wm.gesture.active) return;
+    const monitor = wm.gesture.monitor orelse return;
+    if (!isScrollingLayout(monitor)) {
+        wm.gesture.active = false;
+        return;
+    }
+
+    const sign: f64 = if (wm.config.gesture_natural) -1.0 else 1.0;
+    const delta = event.dx * @as(f64, wm.config.gesture_speed) * sign;
+
+    const geo = scrolling.geometry(monitor);
+    const min_position: f64 = @floatFromInt(-geo.available_w);
+    const max_position: f64 = @floatFromInt(scrolling.contentWidth(monitor));
+
+    wm.gesture.position = @max(min_position, @min(wm.gesture.position + delta, max_position));
+    wm.gesture.push(delta, nowMs(wm));
+
+    monitor.scroll_offset = @intFromFloat(@round(wm.gesture.position));
+    arrange(monitor, wm);
+}
+
+fn gestureEnd(event: gesture_mod.Event, wm: *WindowManager) void {
+    _ = event;
+    if (!wm.gesture.active) return;
+    wm.gesture.active = false;
+    const monitor = wm.gesture.monitor orelse return;
+    if (!isScrollingLayout(monitor)) return;
+
+    const velocity = wm.gesture.velocity(nowMs(wm));
+    const deceleration = 1000.0 * @log(window_manager.gesture_deceleration);
+    const projected = wm.gesture.position - velocity / deceleration;
+
+    const snap = scrolling.nearestSnap(monitor, projected) orelse {
+        arrange(monitor, wm);
+        return;
+    };
+
+    focus(snap.client, wm);
+    wm.animation_monitor = monitor;
+    wm.scroll_animation.startSpring(wm.io, monitor.scroll_offset, snap.offset, velocity, .{});
+    if (!wm.scroll_animation.isActive()) arrange(monitor, wm);
 }
 
 fn positionFloating(client: *Client, monitor: *Monitor, pos: config_mod.FloatingPosition) void {
@@ -522,6 +629,7 @@ pub fn applyRules(client: *Client, wm: *WindowManager) void {
                 client.rule_fullscreen = true;
             }
             client.tags |= rule.tags;
+            if (rule.width > 0) client.scroll_width = rule.width;
             if (rule.monitor >= 0) {
                 var target = wm.monitors;
                 var index: i32 = 0;

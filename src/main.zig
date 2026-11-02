@@ -81,7 +81,7 @@ pub fn main(init: std.process.Init) !void {
 
     try runAutostartCommands(&wm);
     std.debug.print("entering event loop\n", .{});
-    wm.run(handlers.handleEvent, window_manager.core.tickAnimations);
+    wm.run(handlers.handleEvent, window_manager.core.tickAnimations, window_manager.core.handleGesture);
 
     lua.deinit();
     std.debug.print("oxwm exiting\n", .{});
