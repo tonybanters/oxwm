@@ -260,7 +260,7 @@ function oxwm.scroll.set_default_width(width) end
 function oxwm.scroll.set_width_presets(presets) end
 
 ---Enable or disable touchpad swipe gestures (requires read access to /dev/input)
----@param enabled boolean Default true
+---@param enabled boolean Default false
 function oxwm.scroll.set_gesture_enabled(enabled) end
 
 ---Set how many fingers a swipe needs to scroll the layout

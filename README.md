@@ -91,7 +91,7 @@ cd oxwm
 zig build -Doptimize=ReleaseSmall --prefix /usr
 ```
 
-Touchpad swipe gestures for the scrolling layout use libinput and libudev, which only exist on Linux. They are built in by default and skipped automatically on BSD targets. Pass `-Dno_gestures` to leave them out anywhere, or use `zig build openbsd` (also `freebsd`, `netbsd`, `bsd`) which does the same and installs the result.
+Touchpad swipe gestures for the scrolling layout use libinput and libudev, which only exist on Linux. They are compiled in by default (needs the libinput and libudev development packages) and skipped automatically on BSD targets. At runtime they stay off until you uncomment `oxwm.scroll.set_gesture_enabled(true)` in your config. Pass `-Dno_gestures` to leave them out anywhere, or use `zig build openbsd` (also `freebsd`, `netbsd`, `bsd`) which does the same and installs the result.
 
 ### Setting up OXWM
 

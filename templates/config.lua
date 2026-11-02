@@ -134,7 +134,8 @@ oxwm.set_layout_symbol("tabbed", "[=]")
 -- oxwm.scroll.set_default_width(0.5)
 -- oxwm.scroll.set_width_presets({ 1 / 3, 1 / 2, 2 / 3 })
 -- Three-finger touchpad swipes scroll the strip and snap to the nearest window
--- (needs read access to /dev/input, usually the "input" group)
+-- Off by default. Uncomment this to enable trackpad gestures
+-- (needs libinput at build time and read access to /dev/input, usually the "input" group)
 -- oxwm.scroll.set_gesture_enabled(true)
 -- oxwm.scroll.set_gesture_fingers(3)
 -- oxwm.scroll.set_gesture_speed(2.0)
