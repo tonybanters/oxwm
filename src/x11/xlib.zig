@@ -1,4 +1,9 @@
 pub const c = @cImport({
+    // FreeBSD's math.h exposes private inline functions behind __BSD_VISIBLE
+    // that break Zig's translate-c (bitCast with unknown result type).
+    // Setting _POSIX_C_SOURCE restricts visibility to POSIX-only symbols,
+    // hiding the problematic BSD math internals on FreeBSD.
+    @cDefine("_POSIX_C_SOURCE", "200809L");
     @cInclude("X11/Xlib.h");
     @cInclude("X11/Xutil.h");
     @cInclude("X11/Xatom.h");
