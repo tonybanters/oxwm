@@ -738,9 +738,6 @@ pub const WindowManager = struct {
     }
 
     /// Run the event loop until `self.running` is set to false.
-    ///
-    /// `eventFn` dispatches a single XEvent
-    /// `tickFn` is called once per loop iteration to advance animations
     pub fn run(
         self: *WindowManager,
         eventFn: fn (*xlib.XEvent, *WindowManager) void,
