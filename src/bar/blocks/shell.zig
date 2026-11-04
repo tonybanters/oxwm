@@ -19,7 +19,7 @@ pub const Shell = struct {
     pub fn content(self: *Shell, io: std.Io, gpa: std.mem.Allocator, buffer: []u8) []const u8 {
         var cmd_output: [256]u8 = undefined;
         const result = std.process.run(gpa, io, .{
-            .argv = &.{ "/bin/sh", "-c", self.command },
+            .argv = &.{ "sh", "-c", self.command },
         }) catch return buffer[0..0];
         defer gpa.free(result.stdout);
         defer gpa.free(result.stderr);
