@@ -8,6 +8,7 @@ const Block = config_mod.Block;
 const ColorScheme = config_mod.ColorScheme;
 
 const c = @cImport({
+    @cDefine("_POSIX_C_SOURCE", "200809L");
     @cInclude("lua.h");
     @cInclude("lauxlib.h");
     @cInclude("lualib.h");
