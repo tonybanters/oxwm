@@ -118,6 +118,21 @@ pub const Systray = struct {
             1,
         );
 
+        var vinfo: xlib.XVisualInfo = undefined;
+        if (xlib.XMatchVisualInfo(display, screen, 32, xlib.TrueColor, &vinfo) != 0) {
+            const visual_id: xlib.VisualID = vinfo.visualid;
+            _ = xlib.XChangeProperty(
+                display,
+                self.window,
+                self.net_system_tray_visual,
+                xlib.XA_VISUALID,
+                32,
+                xlib.PropModeReplace,
+                @ptrCast(&visual_id),
+                1,
+            );
+        }
+        
         self.sendManagerMessage(root);
 
         _ = xlib.XMapWindow(display, self.window);
