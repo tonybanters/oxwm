@@ -8,6 +8,7 @@ pub const Battery = struct {
     battery_name: []const u8,
     interval_secs: u64,
     color: c_ulong,
+    bg: c_ulong,
 
     pub fn init(
         format_charging: []const u8,
@@ -16,6 +17,7 @@ pub const Battery = struct {
         battery_name: []const u8,
         interval_secs: u64,
         color: c_ulong,
+        background: c_ulong,
     ) Battery {
         return .{
             .format_charging = format_charging,
@@ -24,6 +26,7 @@ pub const Battery = struct {
             .battery_name = if (battery_name.len > 0) battery_name else "BAT0",
             .interval_secs = interval_secs,
             .color = color,
+            .bg = background,
         };
     }
 

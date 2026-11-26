@@ -4,12 +4,14 @@ pub const Ram = struct {
     format: []const u8,
     interval_secs: u64,
     color: c_ulong,
+    bg: c_ulong,
 
-    pub fn init(format: []const u8, interval_secs: u64, color: c_ulong) Ram {
+    pub fn init(format: []const u8, interval_secs: u64, color: c_ulong, background: c_ulong) Ram {
         return .{
             .format = format,
             .interval_secs = interval_secs,
             .color = color,
+            .bg = background,
         };
     }
 

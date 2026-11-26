@@ -6,6 +6,7 @@ pub const CpuTemp = struct {
     device: []const u8,
     interval_secs: u64,
     color: c_ulong,
+    bg: c_ulong,
     cached_path: [128]u8,
     cached_path_len: usize,
     detection_attempted: bool,
@@ -15,12 +16,14 @@ pub const CpuTemp = struct {
         device: []const u8,
         interval_secs: u64,
         color: c_ulong,
+        background: c_ulong,
     ) CpuTemp {
         return .{
             .format = format,
             .device = device,
             .interval_secs = interval_secs,
             .color = color,
+            .bg = background,
             .cached_path = undefined,
             .cached_path_len = 0,
             .detection_attempted = false,
