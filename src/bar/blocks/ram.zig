@@ -23,13 +23,20 @@ pub const Ram = struct {
 
         var total: u64 = 0;
         var available: u64 = 0;
+        var has_available = false;
 
         var lines = std.mem.splitScalar(u8, file_content, '\n');
+
         while (lines.next()) |line| {
             if (std.mem.startsWith(u8, line, "MemTotal:")) {
                 total = parseMemValue(line);
             } else if (std.mem.startsWith(u8, line, "MemAvailable:")) {
                 available = parseMemValue(line);
+                has_available = true;
+            } else if (std.mem.startsWith(u8, line, "MemFree:")) {
+                if (!has_available) {
+                    available = parseMemValue(line);
+                }
             }
         }
 
@@ -108,4 +115,30 @@ fn substitute(format: []const u8, buffer: []u8, values: struct {
         i += 1;
     }
     return buffer[0..pos];
+}
+
+test "proc meminfo contains MemTotal" {
+    const io = std.testing.io;
+
+    const file = std.Io.Dir.openFileAbsolute( io, "/proc/meminfo", .{})
+    catch |err| {
+        if (err == error.FileNotFound)
+            return error.SkipZigTest;
+
+        return err;
+    };
+
+    defer file.close(io);
+
+    var buf: [512]u8 = undefined;
+
+    const bytes_read = try file.readStreaming(
+        io, &.{&buf}
+    );
+
+    try std.testing.expect(
+        std.mem.indexOf(
+            u8, buf[0..bytes_read], "MemTotal:"
+        ) != null
+    );
 }
